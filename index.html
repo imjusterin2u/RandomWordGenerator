@@ -1,1 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Word Slots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bungee&display=swap">
+<style>
+:root{
+  --night:#0B1D14; --night2:#123323;
+  --cab:#046A38; --cab-dark:#044E27; --cab-light:#0DB14B;
+  --gold:#F4C542; --gold-dark:#B8891A; --cream:#FFF8E3;
+  --affix:#FFE000; --affix-edge:#C9A800; --base:#F7F7F4; --base-edge:#BFC5C2;
+  --ink:#16201B; --muted:#5B6A62; --panel:#FBFCF8; --edge:#D6DCDC; --celery:#B4D38C;
+  --good:#0DB14B; --warn:#E8912D; --bad:#C8463D;
+  --H: 96px;   /* reel item height */
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{
+  font-family:"Atkinson Hyperlegible",system-ui,sans-serif; color:var(--ink);
+  background: var(--night) radial-gradient(1200px 700px at 50% 20%, var(--night2), var(--night)) no-repeat fixed;
+  min-height:100%; -webkit-tap-highlight-color:transparent; overflow-x:hidden;
+}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;touch-action:manipulation}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:1240px;margin:0 auto}
+.brand{font-family:Bungee,Impact,sans-serif;font-size:30px;color:var(--gold);letter-spacing:1px;
+  text-shadow:0 2px 0 var(--gold-dark),0 0 18px rgba(244,197,66,.35);margin-right:auto;line-height:1}
+.brand small{display:block;font-family:"Atkinson Hyperlegible",sans-serif;font-size:13px;letter-spacing:0;color:var(--celery);text-shadow:none;margin-top:4px;font-weight:700}
+.coins{display:flex;align-items:center;gap:8px;background:#06120C;border:2px solid var(--gold-dark);border-radius:999px;padding:6px 14px 6px 8px;color:var(--cream);font-weight:700;font-size:20px}
+.coin{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF1B0,var(--gold) 45%,var(--gold-dark));
+  display:grid;place-items:center;color:#6B4D00;font-family:Bungee;font-size:14px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+.coins.bump{animation:bump .5s}
+@keyframes bump{30%{transform:scale(1.15)}}
+.tbtn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);color:var(--cream);border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;padding:10px 14px;font-weight:700;font-size:16px}
+.tbtn:active{transform:translateY(1px)}
+.tbtn svg{width:20px;height:20px}
+
+/* ---------- layout ---------- */
+.stage{max-width:1240px;margin:0 auto;padding:4px 16px 24px;display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:1080px){ .stage{grid-template-columns:minmax(0,640px) minmax(0,1fr);align-items:start} }
+
+/* ---------- cabinet ---------- */
+.cabinet{position:relative;background:linear-gradient(180deg,var(--cab-light) 0%,var(--cab) 18%,var(--cab-dark) 100%);
+  border-radius:28px;padding:18px 74px 22px 22px;border:4px solid var(--gold);
+  box-shadow:0 0 0 6px var(--gold-dark),0 18px 40px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.25)}
+.marquee{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px}
+.bulbs{display:flex;gap:9px}
+.bulb{width:11px;height:11px;border-radius:50%;background:#FFE58A;box-shadow:0 0 8px #FFD23F}
+.bulb:nth-child(odd){animation:blink 1.2s infinite}
+.bulb:nth-child(even){animation:blink 1.2s .6s infinite}
+.cabinet.win .bulb{animation-duration:.25s}
+@keyframes blink{50%{opacity:.25;box-shadow:none}}
+.sign{font-family:Bungee;color:var(--cream);font-size:20px;letter-spacing:2px;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+
+.reels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;background:#06120C;padding:12px;border-radius:18px;
+  box-shadow:inset 0 4px 14px rgba(0,0,0,.7)}
+.reelwrap{display:flex;flex-direction:column;gap:8px;min-width:0}
+.rlabel{text-align:center;color:var(--celery);font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase}
+.window{position:relative;height:calc(var(--H) * 1.7);overflow:hidden;border-radius:12px;
+  background:linear-gradient(180deg,#d9ddd5,#fff 22%,#fff 78%,#d9ddd5)}
+.window::before,.window::after{content:"";position:absolute;left:0;right:0;height:26%;z-index:2;pointer-events:none}
+.window::before{top:0;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent)}
+.window::after{bottom:0;background:linear-gradient(0deg,rgba(0,0,0,.45),transparent)}
+.payline{position:absolute;left:-2px;right:-2px;top:50%;height:2px;background:rgba(200,70,61,.55);z-index:3;pointer-events:none}
+.reelwrap.held .window{box-shadow:0 0 0 4px var(--gold),0 0 18px rgba(244,197,66,.7)}
+.strip{position:absolute;left:0;right:0;top:calc(var(--H) * .35);will-change:transform}
+.item{height:var(--H);display:grid;place-items:center;padding:6px;container-type:inline-size}
+.tile{width:100%;height:100%;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:3px solid var(--base-edge);background:var(--base);position:relative;box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.tile.affix{background:var(--affix);border-color:var(--affix-edge)}
+.tile.blank{background:#E7EAE6;border:3px dashed #A8B0AA}
+.tile .tx{font-size:min(40px, calc(150cqi / var(--len,4)));font-weight:700;line-height:1;white-space:nowrap}
+.tile.blank .tx{font-size:15px;color:var(--muted);font-weight:700;text-align:center;line-height:1.15}
+.tile .tag{position:absolute;bottom:4px;font-size:11px;font-weight:700;color:rgba(22,32,27,.62);letter-spacing:.4px}
+.tile.greek::after{content:"Gk";position:absolute;top:4px;right:6px;font-size:11px;font-weight:700;color:rgba(22,32,27,.55)}
+
+.hold{border-radius:10px;padding:10px 0;font-weight:700;font-size:16px;background:#13261C;color:var(--cream);border:2px solid #2C4A3A;letter-spacing:1px}
+.hold[aria-pressed="true"]{background:var(--gold);color:#3D2B00;border-color:var(--gold-dark)}
+.hold:disabled{opacity:.4;cursor:default}
+
+.spinrow{display:flex;justify-content:center;margin-top:16px}
+.spin{font-family:Bungee;font-size:28px;letter-spacing:2px;color:#3D1500;padding:14px 48px;border-radius:999px;
+  background:linear-gradient(180deg,#FFD866,#F4A51C);border:3px solid #FFF1B0;box-shadow:0 6px 0 #9A5B00,0 10px 20px rgba(0,0,0,.4)}
+.spin:active{transform:translateY(4px);box-shadow:0 2px 0 #9A5B00}
+.spin:disabled{filter:grayscale(.5) brightness(.85);cursor:default}
+.keyhint{text-align:center;color:rgba(255,248,227,.6);font-size:13px;margin-top:10px}
+
+/* lever */
+.lever{position:absolute;right:14px;top:70px;width:46px;height:210px;cursor:grab;touch-action:none}
+.lever .slot{position:absolute;left:17px;top:24px;width:12px;height:150px;border-radius:8px;background:#06120C;box-shadow:inset 0 2px 6px #000}
+.lever .arm{position:absolute;left:19px;top:0;width:8px;height:110px;border-radius:4px;background:linear-gradient(90deg,#9aa5a0,#e9eeeb,#8d9893);
+  transform-origin:50% 100%;transition:transform .25s cubic-bezier(.3,1.6,.6,1)}
+.lever .knob{position:absolute;left:-15px;top:-22px;width:38px;height:38px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ff9a8f,#d2342a 55%,#7d1610);box-shadow:0 4px 8px rgba(0,0,0,.4)}
+.lever .base{position:absolute;left:8px;top:150px;width:30px;height:40px;border-radius:8px;background:linear-gradient(180deg,#c8ced0,#7c8588)}
+.lever.pulled .arm{transform:translateY(96px) scaleY(.2);transition:transform .18s ease-in}
+
+/* ---------- result panel ---------- */
+.panel{background:var(--panel);border-radius:22px;padding:18px 20px 20px;box-shadow:0 14px 30px rgba(0,0,0,.35);min-height:200px}
+.panel h2{margin:0 0 4px;font-size:15px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.built{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px;margin:6px 0 4px}
+.seg{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.chunk{font-size:clamp(34px,5.4vw,56px);font-weight:700;line-height:1.05;padding:6px 12px 8px;border-radius:12px;border:3px solid var(--base-edge);background:var(--base);white-space:nowrap}
+.seg.prefix .chunk,.seg.suffix .chunk{background:var(--affix);border-color:var(--affix-edge)}
+.seg.link .chunk{background:#DDEFD0;border-color:var(--celery);padding:6px 8px 8px}
+.mean{font-size:15px;color:var(--muted);text-align:center;max-width:170px;line-height:1.2;min-height:18px}
+.mean b{color:var(--ink)}
+.panel.hide-mean .mean{visibility:hidden}
+.wordline{display:flex;align-items:center;gap:12px;margin:12px 0 4px;flex-wrap:wrap}
+.whole{font-size:30px;font-weight:700;letter-spacing:.5px}
+.hear{display:flex;align-items:center;gap:6px;border-radius:999px;padding:8px 14px;background:#E9EFE6;font-weight:700;font-size:15px}
+.hear svg{width:18px;height:18px}
+.notes{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+.notes li{background:#FFF6D6;border-left:5px solid var(--gold);border-radius:8px;padding:8px 12px;font-size:16px;line-height:1.35}
+.notes li.cham{background:#E7F3FF;border-left-color:#2C6CB0}
+.notes u{text-decoration-thickness:2px;text-decoration-color:var(--bad)}
+.ask{margin:16px 0 8px;font-size:19px;font-weight:700}
+.verdicts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.vbtn{border-radius:16px;padding:14px 8px;font-size:18px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;
+  border:3px solid transparent;color:#fff;box-shadow:0 4px 0 rgba(0,0,0,.22)}
+.vbtn span{font-size:30px;line-height:1}
+.vbtn small{font-weight:400;font-size:13px;opacity:.92}
+.vbtn.real{background:#0D8A3D}
+.vbtn.could{background:#2C6CB0}
+.vbtn.no{background:#A9433B}
+.vbtn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+.vbtn:disabled{opacity:.35;cursor:default;transform:none}
+.vbtn.chosen{opacity:1;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold)}
+.feedback{margin-top:14px;border-radius:14px;padding:14px 16px;font-size:18px;line-height:1.4;display:none}
+.feedback.show{display:block;animation:pop .35s}
+.feedback.good{background:#E3F6E8;border:2px solid var(--good)}
+.feedback.info{background:#E7F0FA;border:2px solid #2C6CB0}
+.feedback.meh{background:#FFF1E0;border:2px solid var(--warn)}
+.feedback .big{font-family:Bungee;font-size:26px;display:block;margin-bottom:4px;letter-spacing:1px}
+.feedback .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.feedback textarea{width:100%;font:inherit;font-size:18px;border-radius:10px;border:2px solid var(--edge);padding:10px;margin-top:8px;resize:vertical;min-height:64px}
+.pill{border-radius:999px;padding:10px 16px;font-weight:700;font-size:16px;background:var(--cab);color:#fff}
+.pill.ghost{background:transparent;color:var(--ink);border:2px solid var(--edge)}
+.pill.small{padding:6px 12px;font-size:14px}
+@keyframes pop{0%{transform:scale(.96);opacity:0}100%{transform:none;opacity:1}}
+.empty{color:var(--muted);font-size:18px;line-height:1.5;margin:8px 0 0}
+
+/* ---------- dialogs ---------- */
+dialog{border:0;border-radius:22px;padding:0;width:min(720px,calc(100vw - 32px));max-height:calc(100vh - 40px);
+  background:var(--panel);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+dialog::backdrop{background:rgba(4,14,9,.7)}
+.dhead{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--edge);position:sticky;top:0;background:var(--panel);z-index:1}
+.dhead h3{margin:0;font-size:22px;margin-right:auto}
+.dbody{padding:16px 20px 22px;overflow:auto}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tab{padding:8px 14px;border-radius:999px;font-weight:700;background:#E9EFE6}
+.tab[aria-selected="true"]{background:var(--cab);color:#fff}
+.nb{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.nb li{border:1px solid var(--edge);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+.nb .w{font-weight:700;font-size:20px}
+.nb .p{color:var(--muted);font-size:14px}
+.nb .d{font-size:16px;margin-top:2px}
+.nb .x{margin-left:auto;color:var(--muted);font-size:22px;line-height:1;padding:2px 6px}
+.setgrid{display:grid;gap:16px}
+fieldset{border:1px solid var(--edge);border-radius:14px;padding:10px 14px 12px;margin:0}
+legend{font-weight:700;padding:0 6px;font-size:16px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 12px}
+label.ck{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;font-size:16px;cursor:pointer}
+label.ck input{width:22px;height:22px;accent-color:var(--cab);flex:none;margin:0}
+label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.seg3{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.seg3 button{padding:9px 14px;border-radius:10px;border:2px solid var(--edge);font-weight:700}
+.seg3 button[aria-pressed="true"]{background:var(--cab);color:#fff;border-color:var(--cab)}
+.hint{color:var(--muted);font-size:14px;margin:4px 0 0}
+.warn{color:var(--bad);font-weight:700;font-size:14px;min-height:18px;margin:4px 0 0}
+
+/* confetti */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.confetti i{position:absolute;top:-20px;width:10px;height:16px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+@media (max-width:620px){
+  :root{--H:78px}
+  .cabinet{padding:14px 14px 18px}
+  .lever{display:none}
+  .brand{font-size:24px}
+  .tbtn .lbl{display:none}
+}
+@media (prefers-reduced-motion:reduce){ .bulb{animation:none!important} .feedback.show{animation:none} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">Word Slots<small>Spin it. Build it. Decide.</small></div>
+  <div class="coins" id="coins" aria-live="polite"><div class="coin">W</div><span id="coinN">0</span></div>
+  <button class="tbtn" id="nbBtn" aria-label="Word notebook">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z"/><path d="M4 17a3 3 0 0 1 3-3h12"/></svg>
+    <span class="lbl">Notebook</span></button>
+  <button class="tbtn" id="setBtn" aria-label="Teacher settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    <span class="lbl">Teacher</span></button>
+</header>
+
+<main class="stage">
+  <section class="cabinet" id="cabinet" aria-label="Slot machine">
+    <div class="marquee">
+      <div class="bulbs"><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i></div>
+      <div class="sign">MORPHEME MACHINE</div>
+      <div class="bulbs"><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i></div>
+    </div>
+    <div class="reels" id="reels"></div>
+    <div class="spinrow"><button class="spin" id="spinBtn">SPIN</button></div>
+    <div class="keyhint" id="keyhint">Space to spin · 1, 2, 3 to hold a reel</div>
+    <div class="lever" id="lever" role="button" tabindex="0" aria-label="Pull the lever to spin">
+      <div class="slot"></div><div class="base"></div>
+      <div class="arm"><div class="knob"></div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel" aria-live="polite">
+    <h2>Your word</h2>
+    <p class="empty" id="emptyMsg">Pull the lever or press <b>SPIN</b>. The machine builds a word from a prefix, a base and a suffix. Some will be real words, some won't. You decide!</p>
+    <div id="result" hidden>
+      <div class="built" id="built"></div>
+      <div class="wordline">
+        <div class="whole" id="whole"></div>
+        <button class="hear" id="hearBtn" aria-label="Hear the word">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>Hear it</button>
+        <button class="hear" id="peekBtn" hidden>Show meanings</button>
+      </div>
+      <ul class="notes" id="notes"></ul>
+      <div class="ask">Is it a word?</div>
+      <div class="verdicts">
+        <button class="vbtn real" data-v="real"><span>✅</span>Real word<small>I know it</small></button>
+        <button class="vbtn could" data-v="could"><span>🤔</span>Could be a word<small>I can define it</small></button>
+        <button class="vbtn no" data-v="no"><span>🚫</span>No way<small>The parts don't fit</small></button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Notebook -->
+<dialog id="nbDlg" aria-labelledby="nbTitle">
+  <div class="dhead"><h3 id="nbTitle">Word Notebook</h3><button class="pill ghost small" data-close>Close</button></div>
+  <div class="dbody">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="inv" aria-selected="true">My invented words</button>
+      <button class="tab" role="tab" data-tab="real" aria-selected="false">Real words found</button>
+    </div>
+    <ul class="nb" id="nbList"></ul>
+  </div>
+</dialog>
+
+<!-- Teacher settings -->
+<dialog id="setDlg" aria-labelledby="setTitle">
+  <div class="dhead"><h3 id="setTitle">Teacher settings</h3><button class="pill small" data-close>Done</button></div>
+  <div class="dbody setgrid" id="setBody"></div>
+</dialog>
+
+<div class="confetti" id="confetti"></div>
+
+<script>
+/* Word Slots core: word parts, meanings and joining rules.
+   Shared by the page (inlined into index.html by tools/build.py)
+   and by tools/realwords.js, which lists every possible spin so the
+   real-word list can be generated from the same rules.
+
+   Wilson parts and substeps follow the card config in
+   imjusterin2u/word-battle-royale (js/config.js). */
+
+const GROUPS = [
+  // id, reel, label, short tag shown on the tile, on by default
+  ['w3.1',  'prefix', 'Wilson 3.1 prefixes',  '3.1',  true],
+  ['w3.2',  'prefix', 'Wilson 3.2 prefixes',  '3.2',  true],
+  ['w5.1',  'prefix', 'Wilson 5.1 prefixes',  '5.1',  true],
+  ['w5.5',  'prefix', 'Wilson 5.5 prefix',    '5.5',  true],
+  ['num',   'prefix', 'Number prefixes',      'Number', true],
+  ['grkP',  'prefix', 'Greek forms (front)',  'Greek', true],
+  ['w2.4',  'base',   'Wilson 2.4 Latin bases', '2.4', true],
+  ['w2.5',  'base',   'Wilson 2.5 Latin bases', '2.5', true],
+  ['w4.1',  'base',   'Wilson 4.1 Latin bases', '4.1', true],
+  ['free',  'base',   'Free bases',           'Free', true],
+  ['grkB',  'base',   'Greek forms (middle)', 'Greek', true],
+  ['w1.6',  'suffix', 'Wilson 1.6 suffixes',  '1.6',  true],
+  ['w3.5',  'suffix', 'Wilson 3.5 suffixes',  '3.5',  true],
+  ['w4.4',  'suffix', 'Wilson 4.4 suffix',    '4.4',  true],
+  ['w6.1',  'suffix', 'Wilson 6.1 suffixes',  '6.1',  true],
+  ['sci',   'suffix', 'Science endings',      'Science', true],
+];
+
+// [text, meaning, greek?]
+const PARTS = {
+  'w3.1': [['mid','middle'],['mis','wrong, badly'],['non','not'],['trans','across'],['un','not, opposite of']],
+  'w3.2': [['ab','away from'],['ad','to, toward'],['con','with, together'],['com','with, together'],['ex','out'],
+           ['ob','against, in the way'],['dis','not, apart'],['en','in, make'],['em','in, make'],
+           ['in','in, or not'],['im','in, or not'],['sub','under']],
+  'w5.1': [['co','together'],['de','down, away, remove'],['e','out'],['pre','before'],['pro','forward, for'],['re','again, back']],
+  'w5.5': [['a','on, in, or not']],
+  'num':  [['uni','one'],['mono','one',1],['bi','two'],['di','two',1],['tri','three'],['quad','four'],
+           ['penta','five',1],['hexa','six',1],['octo','eight',1],['deca','ten',1],['centi','hundred'],
+           ['kilo','thousand',1],['milli','thousand'],['semi','half'],['multi','many'],['poly','many',1]],
+  'grkP': [['photo','light',1],['bio','life',1],['geo','earth',1],['micro','small',1],['tele','far',1],
+           ['therm','heat',1],['hydro','water',1],['chron','time',1],['auto','self',1]],
+
+  'w2.4': [['fess','admit, tell'],['gress','step'],['mand','order'],['mit','send'],['pel','push, drive'],
+           ['pend','hang'],['press','push down'],['rupt','break'],['sent','feel'],['sist','stand'],
+           ['stant','stand'],['sult','jump'],['tend','stretch'],['tent','stretch, hold'],['vent','come']],
+  'w2.5': [['dict','say'],['duct','lead'],['fect','make, do'],['flect','bend'],['flict','strike'],
+           ['ject','throw'],['lect','choose, read'],['pact','press, fasten'],['rect','straight, right'],
+           ['sect','cut'],['spect','look'],['struct','build'],['tact','touch'],['tract','pull'],['vict','conquer']],
+  'w4.1': [['clude','shut'],['fuse','pour, melt'],['pose','put, place'],['pute','think'],['quire','ask, seek'],
+           ['scribe','write'],['spire','breathe'],['sume','take'],['vise','see'],['voke','call']],
+  'free': [['act','do'],['test','try, check'],['help','aid'],['mend','fix'],['plant','grow, put in'],
+           ['pack','bundle'],['lock','fasten'],['kind','nice; a type'],['hope','wish'],['use','put to work'],
+           ['cut','slice'],['fill','make full'],['rest','relax, stop'],['sense','feel, know'],['form','shape']],
+  'grkB': [['graph','write, draw',1],['scope','look, see',1],['meter','measure',1],['phone','sound',1],
+           ['sphere','ball',1],['cyte','cell',1],['therm','heat',1]],
+
+  'w1.6': [['s','more than one'],['es','more than one']],
+  'w3.5': [['ed','already happened'],['ing','happening now']],
+  'w4.4': [['ive','tending to']],
+  'w6.1': [['able','can be done'],['en','made of; to make'],['er','one who; more'],['est','the most'],
+           ['ish','sort of, like'],['or','one who'],['y','full of, like'],['ful','full of'],['less','without'],
+           ['ly','in a ___ way'],['ment','act or result of'],['ness','state of being'],['ty','state of being']],
+  'sci':  [['ic','like, having to do with'],['al','having to do with'],['ist','one who studies'],
+           ['oid','shaped like'],['ism','belief, practice'],['logy','study of',1],['meter','measure',1],
+           ['scope','look, see',1],['graph','write, record',1],['sphere','ball',1],['cyte','cell',1],['phobia','fear of',1]],
+};
+
+// Build part objects: { id, t, m, greek, group, reel, tag }
+const ALL = [];
+for (const [gid, reel, , tag] of GROUPS) {
+  for (const [t, m, g] of PARTS[gid]) ALL.push({ id: reel + ':' + gid + ':' + t, t, m, greek: !!g, group: gid, reel, tag });
+}
+const BLANK = { prefix: { id: 'prefix:blank', t: '', m: '', reel: 'prefix', blank: true, group: 'blank' },
+                suffix: { id: 'suffix:blank', t: '', m: '', reel: 'suffix', blank: true, group: 'blank' } };
+
+const VOW = /^[aeiouy]/, CONS = /^[bcdfghjklmnpqrstvwxz]/;
+const DOUBLE = new Set(['mit', 'pel', 'cut']);   // 1-1-1 endings that double before a vowel suffix
+
+/* Join a prefix, base and suffix.
+   Returns { word, segs:[{text, role}], notes:[string] }  (role: prefix | base | link | suffix) */
+function join(p, b, s) {
+  const notes = [];
+  const segs = [];
+  if (p && !p.blank) segs.push({ text: p.t, role: 'prefix' });
+
+  let base = b.t;
+  // Greek + Greek joins with a connecting o:  therm + meter → therm·o·meter
+  if (p && !p.blank && p.greek && b.greek && /[^aeiou]$/.test(p.t) && CONS.test(base)) {
+    segs.push({ text: 'o', role: 'link' });
+    notes.push(`Greek forms join with a connecting <b>o</b>: ${p.t} + ${b.t} → ${p.t}<u>o</u>${b.t}`);
+  }
+
+  if (s && !s.blank) {
+    if (b.greek && s.greek) {
+      if (base.endsWith('e')) base = base.slice(0, -1);
+      segs.push({ text: base, role: 'base' });
+      if (/[^aeiou]$/.test(base) && CONS.test(s.t)) {
+        segs.push({ text: 'o', role: 'link' });
+        notes.push(`Greek forms join with a connecting <b>o</b>: ${b.t} + ${s.t} → ${base}<u>o</u>${s.t}`);
+      }
+    } else if (VOW.test(s.t) && base.endsWith('e')) {
+      base = base.slice(0, -1);
+      segs.push({ text: base, role: 'base' });
+      notes.push(`Drop the <b>e</b> before a vowel suffix: ${b.t} + ${s.t} → ${base}${s.t}`);
+    } else if (VOW.test(s.t) && DOUBLE.has(base)) {
+      segs.push({ text: base + base.slice(-1), role: 'base' });
+      notes.push(`Double the last letter before a vowel suffix: ${b.t} + ${s.t} → ${base}${base.slice(-1)}${s.t}`);
+    } else segs.push({ text: base, role: 'base' });
+    segs.push({ text: s.t, role: 'suffix' });
+  } else segs.push({ text: base, role: 'base' });
+
+  return { word: segs.map(x => x.text).join(''), segs, notes };
+}
+
+/* Chameleon prefixes: spellings the prefix often changes into before this base.
+   Returns [{ word, how }] — the page only shows the ones that are real words. */
+const ASSIM = { ad: 'a', ob: 'o', sub: 'su', in: 'i', con: 'co', com: 'co', ex: 'e', dis: 'di' };
+function chameleons(p, b, s) {
+  if (!p || p.blank || p.greek) return [];
+  const out = [];
+  const first = b.t[0];
+  const tail = j => j.word.slice(p.t.length);   // base + suffix part as spelled after joining
+  const rest = tail(join(p, b, s));
+  if (ASSIM[p.t] && CONS.test(first) && p.t.slice(-1) !== first) {
+    const np = ASSIM[p.t] + first;
+    out.push({ word: np + rest, how: `${p.t}- changes to <b>${np}-</b> before ${first}` });
+  }
+  if (['in', 'con', 'en'].includes(p.t) && /^[bmp]/.test(first)) {
+    const np = { in: 'im', con: 'com', en: 'em' }[p.t];
+    out.push({ word: np + rest, how: `${p.t}- changes to <b>${np}-</b> before b, m or p` });
+  }
+  if (p.t === 'ex' && first === 's') out.push({ word: 'ex' + rest.slice(1), how: `ex- swallows the <b>s</b>: ex + ${b.t} → ex${b.t.slice(1)}` });
+  const seen = new Set();
+  return out.filter(o => o.word !== p.t + rest && !seen.has(o.word) && seen.add(o.word));
+}
+
+if (typeof module !== 'undefined') module.exports = { GROUPS, PARTS, ALL, BLANK, join, chameleons };
+
+const REAL_LIST = ["abduct","abducted","abducting","abductor","abducts","abject","abrupt","abruptly","absent","abuse","abused","abuser","abuses","abusing","abusive","act","acted","acting","active","actor","acts","addict","addicted","addicting","addictive","addicts","adduct","adductor","adducts","adjective","admit","admits","admitted","admitting","advent","adventist","advisable","advise","advised","advisement","adviser","advises","advising","advisor","affect","affected","affecting","affective","affects","afflict","afflicted","afflicting","afflicts","aggressive","aggressor","amend","amended","amending","amendment","amends","append","appended","appending","arrest","arrested","arresting","arrests","ascribe","ascribed","ascribes","ascribing","aspect","aspects","aspire","aspired","aspires","aspiring","assent","assented","assist","assisted","assisting","assistive","assists","assume","assumed","assumes","assuming","attend","attended","attending","attends","attentive","attest","attested","attesting","attests","attract","attracted","attracting","attractive","attractor","attracts","autograph","autographed","autographs","bioactive","biographer","biography","biosensor","biosphere","bisected","bisecting","bisects","centimeter","centimeters","chronograph","chronometer","collect","collectable","collected","collecting","collective","collector","collects","command","commanded","commander","commanding","commandment","commands","commend","commendable","commended","commending","commends","commit","commitment","commits","committal","committed","committing","compact","compacted","compacting","compactly","compactness","compactor","compacts","compel","compelled","compelling","compels","compose","composed","composer","composes","composing","compress","compressed","compresses","compressing","compressive","compressor","computable","compute","computed","computer","computes","computing","conclude","concluded","concludes","concluding","conduct","conducted","conducting","conductive","conductor","conducts","confess","confessed","confesses","confessing","confessor","conflict","conflicted","conflicting","conflicts","conform","conformal","conformed","conforming","conformist","conforms","confuse","confused","confuses","confusing","congress","congresses","consent","consented","consenting","consents","consist","consisted","consisting","consists","conspire","conspired","conspires","conspiring","constant","constantly","constants","construct","constructed","constructing","constructive","constructor","constructs","consult","consulted","consulting","consults","consumable","consume","consumed","consumer","consumes","consuming","contact","contacted","contacting","contactless","contacts","contend","contended","contender","contending","contends","content","contented","contentment","contents","contest","contested","contesting","contests","contract","contracted","contracting","contractor","contracts","convent","convents","convict","convicted","convicting","convicts","correct","corrected","correcting","corrective","correctly","correctness","corrector","corrects","corrupt","corrupted","corrupting","corruptly","corrupts","cut","cuts","cutter","cutting","cytology","deduct","deducted","deducting","deductive","deducts","defect","defected","defecting","defective","defector","defects","deflect","deflected","deflecting","deflector","deflects","deform","deformable","deformed","deforming","deforms","defuse","defused","defusing","dejected","delectable","demand","demanded","demanding","demands","depend","dependable","depended","depending","depends","depose","deposed","deposing","depress","depressed","depresses","depressing","depressive","depute","deputed","deputy","describe","described","describes","describing","desist","destruct","destructed","destructing","destructive","destructor","detent","detest","detestable","detested","detests","detract","detracted","detracting","detracts","devise","devised","devises","devising","diffuse","diffused","diffuser","diffuses","diffusing","digress","direct","directed","directing","directive","directly","directness","director","directs","dispel","dispelled","dispelling","dispels","disposable","disposal","dispose","disposed","disposes","disposing","disputable","dispute","disputed","disputes","disputing","disrupt","disrupted","disrupting","disruptive","disruptor","disrupts","dissect","dissected","dissecting","dissects","dissent","dissented","dissenter","dissenting","dissents","distant","distantly","distended","distract","distracted","distracting","distracts","disuse","disused","divisive","divisor","duct","ductal","ducted","ducting","ducts","edict","edicts","effect","effected","effecting","effective","effector","effects","effusive","egress","eject","ejected","ejecting","ejector","ejects","elect","electable","elected","electing","elective","elector","elects","emit","emits","emitted","emitter","emitting","empress","enact","enacted","enacting","enactment","enacts","enquire","enquired","enquirer","enquires","enquiring","enquiry","erect","erected","erecting","erector","erupt","erupted","erupting","eruptive","erupts","event","eventful","eventing","events","evict","evicted","evicting","evoke","evoked","evokes","evoking","exact","exacted","exacting","exactly","exacts","exclude","excluded","excludes","excluding","exist","existed","existing","exists","expect","expected","expecting","expects","expel","expelled","expelling","expels","expend","expendable","expended","expending","expire","expired","expires","expiring","expiry","expose","exposed","exposes","exposing","express","expressed","expresses","expressing","expressive","expressly","extant","extend","extendable","extended","extender","extending","extends","extent","extents","extract","extracted","extracting","extractive","extractor","extracts","fill","filled","filler","filling","fills","filly","form","formal","formed","former","formic","forming","formless","forms","fuse","fused","fuses","fusing","geographer","geographic","geography","geothermal","graph","graphic","graphing","graphs","help","helped","helper","helpful","helping","helpless","helps","hope","hoped","hopeful","hopeless","hopes","hoping","hydrographic","hydrography","hydrophone","hydrothermal","impact","impacted","impactful","impacting","impactor","impacts","impel","impelled","impeller","impels","impending","implant","implantable","implanted","implanting","implants","impose","imposed","imposes","imposing","impress","impressed","impresses","impressing","impressive","imputed","inactive","include","included","includes","including","indict","indictable","indicted","indicting","indictment","indicts","induct","inducted","inductive","inductor","infect","infected","infecting","infective","infects","infill","inflected","inflict","inflicted","inflicting","inflicts","inform","informal","informed","informer","informing","informs","infuse","infused","infuser","infuses","infusing","ingress","inject","injectable","injected","injecting","injector","injects","inquire","inquired","inquirer","inquires","inquiring","inquiry","inscribe","inscribed","insect","insects","insist","insisted","insisting","insists","inspect","inspected","inspecting","inspector","inspects","inspire","inspired","inspires","inspiring","instant","instantly","instants","instruct","instructed","instructing","instructive","instructor","instructs","insult","insulted","insulting","insults","intact","intend","intended","intending","intends","intent","intently","intents","intractable","invent","invented","inventing","inventive","inventor","invents","invoke","invoked","invokes","invoking","kilometer","kilometers","kind","kinder","kindest","kindly","kindness","kinds","lock","lockable","locked","locker","locking","locks","mend","mended","mending","mends","meter","metered","metering","meters","micrometer","micrometers","microphone","microphones","microscope","microscopes","microscopic","microscopy","microspheres","millimeter","millimeters","misuse","misused","misuses","misusing","mitten","monocyte","monocytes","monograph","monographs","multimeter","nonsense","object","objected","objecting","objective","objector","objects","obstruct","obstructed","obstructing","obstructive","obstructs","occluded","opposable","oppose","opposed","opposes","opposing","oppress","oppressed","oppresses","oppressing","oppressive","oppressor","pack","packed","packer","packing","packs","pact","pacts","pend","pending","pentameter","phone","phoned","phones","phoning","phonograph","phonology","phony","photograph","photographed","photographer","photographic","photographing","photographs","photography","photosphere","plant","planted","planter","planting","plants","pose","posed","poser","poses","posing","posy","preclude","precluded","precludes","precluding","predict","predictable","predicted","predicting","predictive","predictor","predicts","prefect","prefects","preform","preformed","preforming","prescribe","prescribed","prescriber","prescribes","prescribing","present","presentable","presented","presenter","presenting","presently","presents","press","pressed","presser","presses","pressing","presume","presumed","presumes","presuming","pretend","pretended","pretender","pretending","pretends","pretest","prevent","preventable","prevented","preventer","preventing","preventive","prevents","proactive","product","productive","products","profess","professed","professes","professing","professor","profuse","profusely","progress","progressed","progresses","progressing","progressive","project","projected","projecting","projective","projector","projects","propel","propelled","propeller","propelling","propels","proposal","propose","proposed","proposer","proposes","proposing","proscribed","prospect","prospecting","prospective","prospector","prospects","protest","protested","protester","protesting","protestor","protests","protracted","protractor","provoke","provoked","provokes","provoking","quire","react","reacted","reacting","reactive","reactor","reacts","rector","recut","reductive","refill","refillable","refilled","refilling","refills","reflect","reflected","reflecting","reflective","reflector","reflects","reform","reformed","reformer","reforming","reformist","reforms","refusal","refuse","refused","refuses","refusing","regress","regressed","regressing","regressive","reject","rejected","rejecting","rejects","remand","remanded","remit","remitted","remitting","repack","repel","repelled","repelling","repels","replant","replanted","replanting","repose","repress","repressed","represses","repressing","repressive","repressor","reputable","repute","reputed","require","required","requirement","requires","requiring","resected","resent","resented","resentful","resenting","resentment","resents","resist","resisted","resisting","resistive","resistor","resists","respect","respectable","respected","respectful","respecting","respective","respects","rest","rested","restful","resting","restive","restless","rests","result","resulted","resulting","results","resume","resumed","resumes","resuming","retentive","retest","retested","retract","retractable","retracted","retracting","retractor","retracts","reusable","reuse","reused","reuses","reusing","revise","revised","revises","revising","revoke","revoked","revokes","revoking","scope","scoped","scopes","scoping","scribal","scribe","scribes","sect","sector","sects","sense","sensed","senseless","senses","sensing","sensor","sent","specter","sphere","spheres","spheroid","spiral","spire","spires","subject","subjected","subjecting","subjective","subjects","submit","submits","submitted","submitter","submitting","subscribe","subscribed","subscriber","subscribes","subscribing","subsist","subsisted","subsisting","substantive","subsumed","subtract","subtracted","subtracting","subtractive","subtracts","suffused","summit","summits","supplant","supplanted","supplanting","suppose","supposed","supposes","supposing","suppress","suppressed","suppresses","suppressing","suppressive","suppressor","tact","tactful","tactic","tactless","telegraph","telegraphed","telegraphic","telegraphing","telegraphs","telegraphy","telephone","telephoned","telephones","telephonic","telephoning","telephony","telescope","telescopes","telescopic","telescoping","televise","televised","televising","tend","tended","tender","tending","tends","tent","tented","tents","test","testable","tested","tester","testing","tests","testy","therm","thermal","thermometer","thermometers","tract","tractable","tractive","tractor","tracts","transact","transacted","transacting","transfected","transform","transformed","transformer","transforming","transforms","transgress","transgressed","transgressive","transmit","transmits","transmittal","transmitted","transmitter","transmitting","transplant","transplanted","transplanting","transplants","transpose","transposed","transposing","uncut","unfilled","unformed","unhelpful","uniform","uniformed","uniformly","uniforms","unkind","unlock","unlockable","unlocked","unlocking","unlocks","unpack","unpacked","unpacking","unrest","untested","unusable","unused","usable","use","used","useful","useless","user","uses","using","vent","vented","venting","vents","victor","vise","visor"];
+</script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const ls = {
+  get(k, d){ try { const v = localStorage.getItem('ws-' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem('ws-' + k, JSON.stringify(v)); } catch {} }
+};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- settings ---------- */
+const DEFAULT_SET = {
+  groups: Object.fromEntries(GROUPS.map(g => [g[0], g[4]])),
+  blanks: true,       // reels can land on "no prefix" / "no suffix"
+  luck: 0.3,          // share of spins steered toward a real word
+  meanings: 'always', // 'always' | 'after'
+  sound: true,
+};
+let SET = Object.assign({}, DEFAULT_SET, ls.get('settings', {}));
+SET.groups = Object.assign({}, DEFAULT_SET.groups, SET.groups || {});
+const saveSet = () => ls.set('settings', SET);
+
+const REAL = new Set(REAL_LIST);
+let custom = ls.get('customReal', []);
+custom.forEach(w => REAL.add(w));
+let coins = ls.get('coins', 0);
+let notebook = ls.get('notebook', { inv: [], real: [] });
+
+/* ---------- pools ---------- */
+const REELS = ['prefix', 'base', 'suffix'];
+const NAMES = { prefix: 'Prefix', base: 'Base', suffix: 'Suffix' };
+let pools = {}, realCombos = [];
+function buildPools(){
+  for (const r of REELS) pools[r] = ALL.filter(p => p.reel === r && SET.groups[p.group]);
+  const P = (SET.blanks ? [BLANK.prefix] : []).concat(pools.prefix);
+  const S = (SET.blanks ? [BLANK.suffix] : []).concat(pools.suffix);
+  realCombos = [];
+  for (const p of P) for (const b of pools.base) for (const s of S)
+    if (REAL.has(join(p, b, s).word)) realCombos.push([p, b, s]);
+}
+function poolFor(r){
+  const list = pools[r];
+  if (r !== 'base' && (SET.blanks || !list.length)) return { list, blankChance: list.length ? 0.18 : 1 };
+  return { list, blankChance: 0 };
+}
+function randomPart(r){
+  const { list, blankChance } = poolFor(r);
+  if (r !== 'base' && Math.random() < blankChance) return BLANK[r];
+  return pick(list);
+}
+
+/* ---------- reels ---------- */
+let current = { prefix: null, base: null, suffix: null };
+let held = { prefix: false, base: false, suffix: false };
+let spinning = false, decided = true, lastSpin = null;
+
+function tileHTML(p){
+  if (!p) return '<div class="tile blank"><div class="tx">?</div></div>';
+  if (p.blank) return `<div class="tile blank"><div class="tx">no<br>${p.reel}</div></div>`;
+  const affix = p.reel !== 'base';
+  const label = p.reel === 'prefix' ? p.t + '-' : p.reel === 'suffix' ? '-' + p.t : p.t;
+  return `<div class="tile ${affix ? 'affix' : ''} ${p.greek ? 'greek' : ''}"><div class="tx" style="--len:${Math.max(4, label.length)}">${esc(label)}</div><div class="tag">${esc(p.tag)}</div></div>`;
+}
+function renderReels(){
+  $('#reels').innerHTML = REELS.map((r, i) => `
+    <div class="reelwrap" id="rw-${r}">
+      <div class="rlabel">${NAMES[r]}</div>
+      <div class="window"><div class="strip" id="strip-${r}"><div class="item">${tileHTML(current[r])}</div></div></div>
+      <button class="hold" id="hold-${r}" aria-pressed="false" disabled>HOLD <span aria-hidden="true">· ${i + 1}</span></button>
+    </div>`).join('');
+  REELS.forEach(r => $('#hold-' + r).addEventListener('click', () => toggleHold(r)));
+}
+function toggleHold(r){
+  if (spinning || !current[r]) return;
+  const others = REELS.filter(x => x !== r && held[x]).length;
+  if (!held[r] && others >= 2) return;      // at least one reel has to spin
+  held[r] = !held[r];
+  $('#hold-' + r).setAttribute('aria-pressed', held[r]);
+  $('#rw-' + r).classList.toggle('held', held[r]);
+  tick(held[r] ? 660 : 440, .05);
+}
+
+function chooseOutcome(){
+  const out = {};
+  if (Math.random() < SET.luck){
+    const fits = realCombos.filter(([p, b, s]) =>
+      (!held.prefix || current.prefix.id === p.id) && (!held.base || current.base.id === b.id) && (!held.suffix || current.suffix.id === s.id));
+    if (fits.length){ const [p, b, s] = pick(fits); return { prefix: p, base: b, suffix: s }; }
+  }
+  for (const r of REELS) out[r] = held[r] ? current[r] : randomPart(r);
+  // avoid an exact repeat of the last spin
+  if (lastSpin && REELS.every(r => out[r] === lastSpin[r]) && !REELS.every(r => held[r])){
+    const r = REELS.find(x => !held[x]); out[r] = randomPart(r);
+  }
+  return out;
+}
+
+function spin(){
+  if (spinning) return;
+  if (!pools.base.length){ openSettings(); return; }
+  spinning = true; decided = false;
+  $('#spinBtn').disabled = true;
+  REELS.forEach(r => $('#hold-' + r).disabled = true);
+  $('#cabinet').classList.remove('win');
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  const out = chooseOutcome();
+  const H = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--H')) || 96;
+  let done = 0;
+  const toSpin = REELS.filter(r => !held[r]);
+  toSpin.forEach((r, i) => {
+    const strip = $('#strip-' + r);
+    const n = REDUCED ? 3 : 14 + i * 5;
+    const items = [current[r]];
+    for (let k = 0; k < n; k++) items.push(randomPart(r));
+    items.push(out[r]);
+    strip.style.transition = 'none';
+    strip.style.transform = 'translateY(0)';
+    strip.innerHTML = items.map(p => `<div class="item">${tileHTML(p)}</div>`).join('');
+    strip.offsetHeight;
+    const dur = REDUCED ? 300 : 900 + i * 380;
+    strip.style.transition = `transform ${dur}ms cubic-bezier(.15,.75,.25,1.04)`;
+    strip.style.transform = `translateY(${-H * (items.length - 1)}px)`;
+    const ticker = setInterval(() => tick(300 + Math.random() * 200, .025), 90);
+    setTimeout(() => {
+      clearInterval(ticker); tick(220, .08);
+      strip.style.transition = 'none';
+      strip.style.transform = 'translateY(0)';
+      strip.innerHTML = `<div class="item">${tileHTML(out[r])}</div>`;
+      if (++done === toSpin.length) finish(out);
+    }, dur + 30);
+  });
+}
+function finish(out){
+  current = out; lastSpin = out;
+  spinning = false;
+  $('#spinBtn').disabled = false;
+  REELS.forEach(r => $('#hold-' + r).disabled = false);
+  showResult();
+}
+
+/* ---------- result ---------- */
+let res = null;
+function showResult(){
+  const { prefix: p, base: b, suffix: s } = current;
+  const j = join(p, b, s);
+  const isReal = REAL.has(j.word);
+  const chams = chameleons(p, b, s).filter(c => REAL.has(c.word));
+  res = { p, b, s, word: j.word, isReal, chams, verdict: null };
+
+  $('#emptyMsg').hidden = true; $('#result').hidden = false;
+  const partFor = { prefix: p, base: b, suffix: s };
+  $('#built').innerHTML = j.segs.map(sg => {
+    const part = partFor[sg.role];
+    const mean = sg.role === 'link' ? 'connector' : `<b>${esc(part.t)}</b> = ${esc(part.m)}`;
+    return `<div class="seg ${sg.role}"><div class="chunk">${esc(sg.text)}</div><div class="mean">${mean}</div></div>`;
+  }).join('');
+  $('#whole').textContent = j.word;
+  $('#notes').innerHTML = j.notes.map(n => `<li>✏️ ${n}</li>`).join('');
+  $('#panel').classList.toggle('hide-mean', SET.meanings === 'after');
+  $('#peekBtn').hidden = SET.meanings !== 'after';
+  $$('.vbtn').forEach(v => { v.disabled = false; v.classList.remove('chosen'); });
+  const fb = $('#feedback'); fb.className = 'feedback'; fb.innerHTML = '';
+}
+function revealMeanings(){ $('#panel').classList.remove('hide-mean'); $('#peekBtn').hidden = true; }
+
+function chamNote(){
+  if (!res.chams.length) return '';
+  return `<div style="margin-top:10px">🦎 <b>Chameleon prefix!</b> ${res.chams.map(c => `${c.how}, which makes <b>${esc(c.word)}</b>, a real word.`).join(' ')}</div>`;
+}
+function partsSentence(){
+  return [res.p, res.b, res.s].filter(x => x && !x.blank).map(x => `<b>${esc(x.t)}</b> (${esc(x.m)})`).join(' + ');
+}
+
+function decide(v){
+  if (!res || res.verdict) return;
+  res.verdict = v; decided = true;
+  revealMeanings();
+  $$('.vbtn').forEach(b => { b.disabled = true; if (b.dataset.v === v) b.classList.add('chosen'); });
+  const fb = $('#feedback');
+  let cls = 'good', html = '', gain = 0;
+  const w = `<b>${esc(res.word)}</b>`;
+  if (res.isReal){
+    if (v === 'real'){
+      gain = 10; html = `<span class="big">JACKPOT! +10</span>${w} is a real word. Now say what it means using its parts: ${partsSentence()}.`;
+      celebrate();
+    } else if (v === 'could'){
+      gain = 5; cls = 'info'; html = `<span class="big">+5 · Surprise!</span>${w} is actually a real word. Your thinking was right: the parts fit. ${partsSentence()}.`;
+    } else {
+      gain = 1; cls = 'meh'; html = `<span class="big">+1 · It's real!</span>${w} is a real word. Look at the parts again: ${partsSentence()}.`;
+    }
+    logReal();
+  } else if (v === 'real'){
+    cls = 'meh';
+    html = `<span class="big">Hmm…</span>${w} isn't in our word list. Talk it over: is it really a word, or does it just sound like one?${chamNote()}
+      <div class="row"><button class="pill small" id="tReal">Teacher: it's real (+10)</button><button class="pill ghost small" id="tCould">Call it a could-be word</button></div>`;
+  } else if (v === 'could'){
+    gain = 0; cls = 'info';
+    html = `<span class="big">Inventor's Prize</span>If ${w} were a word, what would it mean? Use the parts: ${partsSentence()}.${chamNote()}
+      <textarea id="defIn" placeholder="${esc(res.word)} means…" aria-label="Your definition"></textarea>
+      <div class="row"><button class="pill" id="saveDef">Save to notebook (+5)</button><button class="pill ghost small" id="skipDef">Skip (+2)</button></div>`;
+  } else {
+    gain = 3; cls = 'good';
+    html = `<span class="big">Good eye! +3</span>Why doesn't ${w} work? Do the parts clash, does the spelling look wrong, or does the meaning not make sense?${chamNote()}`;
+  }
+  fb.className = 'feedback show ' + cls; fb.innerHTML = html;
+  if (gain) addCoins(gain);
+  if (v === 'real' && res.isReal) chime(); else if (gain) tick(880, .06);
+
+  const on = (id, f) => { const el = document.getElementById(id); if (el) el.addEventListener('click', f); };
+  on('tReal', () => { custom.push(res.word); ls.set('customReal', custom); REAL.add(res.word); res.isReal = true; logReal(); buildPools();
+    addCoins(10); chime(); celebrate(); fb.className = 'feedback show good'; fb.innerHTML = `<span class="big">JACKPOT! +10</span><b>${esc(res.word)}</b> is now in the real-word list on this iPad. What does it mean? ${partsSentence()}.`; });
+  on('tCould', () => { res.verdict = null; decide('could'); });
+  on('saveDef', () => {
+    const d = $('#defIn').value.trim();
+    if (!d){ $('#defIn').focus(); $('#defIn').placeholder = 'Type what it would mean first'; return; }
+    notebook.inv.unshift({ w: res.word, parts: partsPlain(), d, at: Date.now() }); ls.set('notebook', notebook);
+    addCoins(5); chime();
+    fb.innerHTML = `<span class="big">Saved! +5</span><b>${esc(res.word)}</b>: ${esc(d)}`;
+  });
+  on('skipDef', () => { addCoins(2); fb.innerHTML = `<span class="big">+2</span>Spin again when you're ready.`; });
+  if (v === 'could' && !res.isReal) setTimeout(() => $('#defIn') && $('#defIn').focus({ preventScroll: true }), 50);
+}
+function partsPlain(){ return [res.p, res.b, res.s].filter(x => x && !x.blank).map(x => x.t).join(' + '); }
+function logReal(){
+  if (!notebook.real.some(x => x.w === res.word)){ notebook.real.unshift({ w: res.word, parts: partsPlain(), at: Date.now() }); ls.set('notebook', notebook); }
+}
+function addCoins(n){
+  coins += n; ls.set('coins', coins); $('#coinN').textContent = coins;
+  const c = $('#coins'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
+}
+
+/* ---------- sound ---------- */
+let actx;
+function tone(f, t, d, v, type){
+  if (!SET.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'square'; o.frequency.value = f;
+    g.gain.setValueAtTime(v, actx.currentTime + t); g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + t + d);
+    o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + d + .02);
+  } catch {}
+}
+const tick = (f, v) => tone(f, 0, .05, v || .04);
+const chime = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .09, .25, .07, 'triangle'));
+function celebrate(){
+  $('#cabinet').classList.add('win');
+  if (REDUCED) return;
+  const box = $('#confetti'), colors = ['#FFE000', '#0DB14B', '#F4C542', '#B4D38C', '#ffffff', '#2C6CB0'];
+  box.innerHTML = Array.from({ length: 70 }, () =>
+    `<i style="left:${Math.random() * 100}%;background:${pick(colors)};animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .4}s"></i>`).join('');
+  setTimeout(() => box.innerHTML = '', 3800);
+}
+function say(text){
+  try { const u = new SpeechSynthesisUtterance(text); u.rate = .85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
+}
+
+/* ---------- lever ---------- */
+function pullLever(){
+  if (spinning) return;
+  const l = $('#lever'); l.classList.add('pulled'); tone(140, 0, .12, .06, 'sawtooth');
+  setTimeout(() => { l.classList.remove('pulled'); spin(); }, 220);
+}
+
+/* ---------- notebook ---------- */
+let nbTab = 'inv';
+function renderNotebook(){
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === nbTab));
+  const list = notebook[nbTab];
+  if (!list.length){
+    $('#nbList').innerHTML = `<li style="border:0;color:var(--muted)">${nbTab === 'inv' ? 'No invented words yet. When you call a word "Could be a word" and define it, it lands here.' : 'No real words yet. Keep spinning!'}</li>`;
+    return;
+  }
+  $('#nbList').innerHTML = list.map((x, i) => `<li><div><div class="w">${esc(x.w)}</div><div class="p">${esc(x.parts)}</div>${x.d ? `<div class="d">${esc(x.d)}</div>` : ''}</div>
+    <button class="x" data-del="${i}" aria-label="Remove ${esc(x.w)}">×</button></li>`).join('');
+}
+$('#nbList').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  notebook[nbTab].splice(+b.dataset.del, 1); ls.set('notebook', notebook); renderNotebook();
+});
+$$('.tab').forEach(t => t.addEventListener('click', () => { nbTab = t.dataset.tab; renderNotebook(); }));
+
+/* ---------- teacher settings ---------- */
+function examples(gid){ return PARTS[gid].map(x => x[0]).join(', '); }
+function renderSettings(){
+  const byReel = r => GROUPS.filter(g => g[1] === r).map(g => `
+    <label class="ck"><input type="checkbox" data-g="${g[0]}" ${SET.groups[g[0]] ? 'checked' : ''}>
+      <span>${esc(g[2])}<span class="ex">${esc(examples(g[0]))}</span></span></label>`).join('');
+  const segBtns = (key, opts) => opts.map(([v, l]) => `<button data-k="${key}" data-val="${v}" aria-pressed="${SET[key] === v}">${l}</button>`).join('');
+  $('#setBody').innerHTML = `
+    <fieldset><legend>Prefix reel</legend><div class="checks">${byReel('prefix')}</div></fieldset>
+    <fieldset><legend>Base reel</legend><div class="checks">${byReel('base')}</div><div class="warn" id="baseWarn"></div></fieldset>
+    <fieldset><legend>Suffix reel</legend><div class="checks">${byReel('suffix')}</div></fieldset>
+    <fieldset><legend>How often a real word comes up</legend>
+      <div class="seg3">${segBtns('luck', [[0, 'Wild (pure chance)'], [0.3, 'Balanced'], [0.55, 'Lucky']])}</div>
+      <p class="hint" id="comboCount"></p></fieldset>
+    <fieldset><legend>Options</legend>
+      <label class="ck"><input type="checkbox" id="optBlank" ${SET.blanks ? 'checked' : ''}><span>Reels can land on "no prefix" or "no suffix"<span class="ex">Gives two-part words like inspect or helpful</span></span></label>
+      <label class="ck"><input type="checkbox" id="optSound" ${SET.sound ? 'checked' : ''}><span>Sound effects</span></label>
+      <div style="margin-top:6px;font-size:16px">Show part meanings</div>
+      <div class="seg3">${segBtns('meanings', [['always', 'Right away'], ['after', 'After they decide']])}</div>
+    </fieldset>
+    <fieldset><legend>Reset</legend>
+      <div class="seg3"><button id="rsCoins">Reset coins</button><button id="rsNb">Clear notebook</button><button id="rsCustom">Clear teacher-added words (${custom.length})</button></div></fieldset>`;
+  updateCounts();
+}
+function updateCounts(){
+  $('#baseWarn').textContent = pools.base.length ? '' : 'Turn on at least one base group so the machine can spin.';
+  $('#comboCount').textContent = `${realCombos.length} real words can come up with these settings.`;
+}
+$('#setBody').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.g) SET.groups[t.dataset.g] = t.checked;
+  if (t.id === 'optBlank') SET.blanks = t.checked;
+  if (t.id === 'optSound') SET.sound = t.checked;
+  saveSet(); buildPools(); updateCounts();
+});
+$('#setBody').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.k){
+    const v = b.dataset.k === 'luck' ? +b.dataset.val : b.dataset.val;
+    SET[b.dataset.k] = v; saveSet();
+    $$(`#setBody [data-k="${b.dataset.k}"]`).forEach(x => x.setAttribute('aria-pressed', x === b));
+  }
+  if (b.id === 'rsCoins' && confirm('Reset coins to 0?')){ coins = 0; ls.set('coins', 0); $('#coinN').textContent = 0; }
+  if (b.id === 'rsNb' && confirm('Clear the notebook (invented and real words)?')){ notebook = { inv: [], real: [] }; ls.set('notebook', notebook); }
+  if (b.id === 'rsCustom' && confirm('Remove the words you marked as real?')){ custom.forEach(w => { if (!REAL_LIST.includes(w)) REAL.delete(w); }); custom = []; ls.set('customReal', custom); buildPools(); renderSettings(); }
+});
+function openSettings(){ renderSettings(); $('#setDlg').showModal(); }
+$('#setDlg').addEventListener('close', () => { if (res && !res.verdict) showResult(); });
+
+/* ---------- wire up ---------- */
+$('#spinBtn').addEventListener('click', pullLever);
+$('#lever').addEventListener('pointerdown', e => { e.preventDefault(); pullLever(); });
+$('#lever').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pullLever(); } });
+$('#hearBtn').addEventListener('click', () => res && say(res.word));
+$('#peekBtn').addEventListener('click', revealMeanings);
+$$('.vbtn').forEach(b => b.addEventListener('click', () => decide(b.dataset.v)));
+$('#nbBtn').addEventListener('click', () => { renderNotebook(); $('#nbDlg').showModal(); });
+$('#setBtn').addEventListener('click', openSettings);
+$$('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input,textarea,dialog') || e.metaKey || e.ctrlKey) return;
+  if (e.key === ' '){ e.preventDefault(); pullLever(); }
+  else if (['1', '2', '3'].includes(e.key)) toggleHold(REELS[+e.key - 1]);
+});
+
+$('#coinN').textContent = coins;
+buildPools();
+renderReels();
+})();
+</script>
+</body>
+</html>
