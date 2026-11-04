@@ -178,6 +178,41 @@ label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .hint{color:var(--muted);font-size:14px;margin:4px 0 0}
 .warn{color:var(--bad);font-weight:700;font-size:14px;min-height:18px;margin:4px 0 0}
 
+/* power-ups */
+.powerups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.pu{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 9px;border-radius:14px;
+  background:#06120C;border:2px solid #2C4A3A;color:var(--cream);font-weight:700;font-size:14px;line-height:1.15;text-align:center}
+.pu .ic{font-size:22px;line-height:1}
+.pu .cost{display:inline-flex;align-items:center;gap:3px;color:var(--gold);font-size:13px}
+.pu .cost i{width:12px;height:12px;border-radius:50%;background:var(--gold);display:inline-block}
+.pu:not(:disabled):active{transform:translateY(2px)}
+.pu:disabled{opacity:.38;cursor:default}
+.pu.armed{border-color:var(--gold);box-shadow:0 0 0 3px rgba(244,197,66,.5);background:#2a2208}
+.nudge{position:absolute;left:50%;transform:translateX(-50%);z-index:4;width:64px;height:30px;border-radius:999px;
+  background:var(--gold);color:#3D2B00;font-size:18px;font-weight:700;display:none;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.nudge.up{top:4px}.nudge.dn{bottom:4px}
+.reels.nudging .reelwrap:not(.held) .nudge{display:block}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:60;pointer-events:none;
+  background:#06120C;color:var(--cream);border:2px solid var(--gold);border-radius:14px;padding:12px 18px;font-size:17px;max-width:min(560px,calc(100vw - 32px));
+  transition:opacity .25s,transform .25s;text-align:center;line-height:1.35}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.pickgrid button{border-radius:12px;padding:10px 6px;font-weight:700;font-size:20px;border:3px solid var(--base-edge);background:var(--base);line-height:1.1}
+.pickgrid button.affix{background:var(--affix);border-color:var(--affix-edge)}
+.pickgrid button small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:3px}
+.pickgroup{margin:12px 0 6px;font-weight:700;color:var(--muted);font-size:14px;letter-spacing:.5px;text-transform:uppercase}
+.goalbar{grid-column:1 / -1;display:flex;align-items:center;gap:12px;background:#06120C;border:2px solid #2C4A3A;border-radius:16px;padding:10px 14px;color:var(--cream)}
+.goalbar .gl{font-weight:700;font-size:15px;white-space:nowrap}
+.goalbar .track{flex:1;height:18px;border-radius:999px;background:#1A3326;overflow:hidden;min-width:80px}
+.goalbar .fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--cab-light),var(--gold));transition:width .6s cubic-bezier(.3,1.3,.6,1)}
+.goalbar .num{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.goalbar .rw{font-size:14px;color:var(--celery);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34%}
+.goalbar.done{border-color:var(--gold)}
+.goalbar.done .rw{color:var(--gold);font-weight:700}
+.bigwin{text-align:center;padding:26px 22px 24px}
+.bigwin .t{font-family:Bungee,Impact,sans-serif;font-size:34px;color:var(--cab);letter-spacing:1px}
+.bigwin .r{font-size:24px;font-weight:700;margin:14px 0 18px;line-height:1.3}
+@media (max-width:620px){ .goalbar{flex-wrap:wrap} .goalbar .rw{max-width:100%;flex-basis:100%} .powerups{grid-template-columns:repeat(2,minmax(0,1fr))} }
 /* writing card */
 .write{margin-top:14px;background:#fff;border:2px dashed var(--celery);border-radius:14px;padding:12px 14px}
 .write h4{margin:0 0 8px;font-size:18px}
@@ -245,6 +280,12 @@ label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 </header>
 
 <main class="stage">
+  <div class="goalbar" id="goalbar" hidden>
+    <span class="gl">🎯 Today's goal</span>
+    <div class="track" role="progressbar" aria-label="Coins toward today's goal"><div class="fill" id="goalFill"></div></div>
+    <span class="num" id="goalNum"></span>
+    <span class="rw" id="goalReward"></span>
+  </div>
   <section class="cabinet" id="cabinet" aria-label="Slot machine">
     <div class="marquee">
       <div class="bulbs"><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i><i class="bulb"></i></div>
@@ -254,6 +295,12 @@ label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
     <div class="reels" id="reels"></div>
     <div class="spinrow"><button class="spin" id="spinBtn">SPIN</button></div>
     <div class="keyhint" id="keyhint">Space to spin · 1, 2, 3 to hold a reel</div>
+    <div class="powerups" id="powerups">
+      <button class="pu" data-pu="nudge"><span class="ic">↕️</span>Nudge<span class="cost"><i></i>15</span></button>
+      <button class="pu" data-pu="pick"><span class="ic">👆</span>Pick a part<span class="cost"><i></i>30</span></button>
+      <button class="pu" data-pu="hint"><span class="ic">🔍</span>Hint<span class="cost"><i></i>20</span></button>
+      <button class="pu" data-pu="lucky"><span class="ic">🍀</span>Lucky spin<span class="cost"><i></i>25</span></button>
+    </div>
     <div class="lever" id="lever" role="button" tabindex="0" aria-label="Pull the lever to spin">
       <div class="slot"></div><div class="base"></div>
       <div class="arm"><div class="knob"></div></div>
@@ -313,6 +360,26 @@ label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
   <div class="dbody setgrid" id="setBody"></div>
 </dialog>
 
+<dialog id="pickDlg" aria-labelledby="pickTitle">
+  <div class="dhead"><h3 id="pickTitle">👆 Pick a part</h3><button class="pill ghost small" data-close>Cancel</button></div>
+  <div class="dbody">
+    <div class="tabs" role="tablist" id="pickTabs">
+      <button class="tab" data-reel="prefix">Prefix</button><button class="tab" data-reel="base">Base</button><button class="tab" data-reel="suffix">Suffix</button>
+    </div>
+    <p class="hint" style="margin:0 0 8px">Choose one. It locks in, and the other reels spin. Costs 30 coins.</p>
+    <div id="pickList"></div>
+  </div>
+</dialog>
+
+<dialog id="goalDlg" aria-labelledby="goalTitle">
+  <div class="bigwin">
+    <div class="t" id="goalTitle">GOAL REACHED!</div>
+    <div class="r" id="goalDlgReward"></div>
+    <button class="pill" data-close>Keep spinning</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
 <div class="confetti" id="confetti"></div>
 
 <script>
@@ -341,6 +408,8 @@ const DEFAULT_SET = {
   sound: true,
   voice: '',         // speechSynthesis voice name; '' = pick a good default
   rate: 0.85,
+  goal: 100,          // coins to earn in a session; 0 = no goal
+  reward: 'Pick a game for the last 5 minutes',
 };
 let SET = Object.assign({}, DEFAULT_SET, ls.get('settings', {}));
 SET.groups = Object.assign({}, DEFAULT_SET.groups, SET.groups || {});
@@ -392,10 +461,13 @@ function renderReels(){
   $('#reels').innerHTML = REELS.map((r, i) => `
     <div class="reelwrap" id="rw-${r}">
       <div class="rlabel">${NAMES[r]}</div>
-      <div class="window"><div class="strip" id="strip-${r}"><div class="item">${tileHTML(current[r])}</div></div></div>
+      <div class="window"><div class="strip" id="strip-${r}"><div class="item">${tileHTML(current[r])}</div></div>
+        <button class="nudge up" data-nudge="${r}" data-dir="-1" aria-label="Nudge ${NAMES[r]} up">▲</button>
+        <button class="nudge dn" data-nudge="${r}" data-dir="1" aria-label="Nudge ${NAMES[r]} down">▼</button></div>
       <button class="hold" id="hold-${r}" aria-pressed="false" disabled>HOLD <span aria-hidden="true">· ${i + 1}</span></button>
     </div>`).join('');
   REELS.forEach(r => $('#hold-' + r).addEventListener('click', () => toggleHold(r)));
+  $$('.nudge').forEach(b => b.addEventListener('click', () => doNudge(b.dataset.nudge, +b.dataset.dir)));
 }
 function toggleHold(r){
   if (spinning || !current[r]) return;
@@ -405,15 +477,17 @@ function toggleHold(r){
   $('#hold-' + r).setAttribute('aria-pressed', held[r]);
   $('#rw-' + r).classList.toggle('held', held[r]);
   tick(held[r] ? 660 : 440, .05);
+  updatePU();
 }
 
 function chooseOutcome(){
   const out = {};
-  if (Math.random() < SET.luck){
+  if (luckyArmed || Math.random() < SET.luck){
     const fits = realCombos.filter(([p, b, s]) =>
       (!held.prefix || current.prefix.id === p.id) && (!held.base || current.base.id === b.id) && (!held.suffix || current.suffix.id === s.id));
-    if (fits.length){ const [p, b, s] = pick(fits); return { prefix: p, base: b, suffix: s }; }
+    if (fits.length){ luckyArmed = false; const [p, b, s] = pick(fits); return { prefix: p, base: b, suffix: s }; }
   }
+  if (luckyArmed){ luckyArmed = false; addCoins(PU.lucky.cost, true); toast('No real word fits what you held, so your Lucky spin coins came back.'); }
   for (const r of REELS) out[r] = held[r] ? current[r] : randomPart(r);
   // avoid an exact repeat of the last spin
   if (lastSpin && REELS.every(r => out[r] === lastSpin[r]) && !REELS.every(r => held[r])){
@@ -426,6 +500,7 @@ function spin(){
   if (spinning) return;
   if (!pools.base.length){ openSettings(); return; }
   spinning = true; decided = false;
+  setNudging(false); updatePU();
   $('#spinBtn').disabled = true;
   REELS.forEach(r => $('#hold-' + r).disabled = true);
   $('#cabinet').classList.remove('win');
@@ -460,6 +535,7 @@ function spin(){
 function finish(out){
   current = out; lastSpin = out;
   spinning = false;
+  updatePU();
   $('#spinBtn').disabled = false;
   REELS.forEach(r => $('#hold-' + r).disabled = false);
   showResult();
@@ -487,6 +563,7 @@ function showResult(){
   $('#peekBtn').hidden = SET.meanings !== 'after';
   $$('.vbtn').forEach(v => { v.disabled = false; v.classList.remove('chosen'); });
   const fb = $('#feedback'); fb.className = 'feedback'; fb.innerHTML = '';
+  updatePU();
 }
 function revealMeanings(){ $('#panel').classList.remove('hide-mean'); $('#peekBtn').hidden = true; }
 
@@ -501,6 +578,7 @@ function partsSentence(){
 function decide(v){
   if (!res || res.verdict) return;
   res.verdict = v; decided = true;
+  setNudging(false);
   revealMeanings();
   $$('.vbtn').forEach(b => { b.disabled = true; if (b.dataset.v === v) b.classList.add('chosen'); });
   const fb = $('#feedback');
@@ -600,9 +678,10 @@ function partsPlain(){ return [res.p, res.b, res.s].filter(x => x && !x.blank).m
 function logReal(){
   if (!notebook.real.some(x => x.w === res.word)){ notebook.real.unshift({ w: res.word, parts: partsPlain(), at: Date.now() }); ls.set('notebook', notebook); }
 }
-function addCoins(n){
+function addCoins(n, refund){
   coins += n; ls.set('coins', coins); $('#coinN').textContent = coins;
-updateSheetCount();
+  if (n > 0 && !refund) addSession(n);
+  updatePU();
   const c = $('#coins'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
 }
 
@@ -695,6 +774,131 @@ function pullLever(){
   setTimeout(() => { l.classList.remove('pulled'); spin(); }, 220);
 }
 
+/* ---------- power-ups ---------- */
+const PU = {
+  nudge: { cost: 15, name: 'Nudge' },
+  pick:  { cost: 30, name: 'Pick a part' },
+  hint:  { cost: 20, name: 'Hint' },
+  lucky: { cost: 25, name: 'Lucky spin' },
+};
+let luckyArmed = false, nudging = false;
+function spend(key){
+  const c = PU[key].cost;
+  if (coins < c){ toast(`${PU[key].name} costs ${c} coins. You have ${coins}.`); return false; }
+  coins -= c; ls.set('coins', coins); $('#coinN').textContent = coins;
+  tone(520, 0, .08, .05, 'triangle'); tone(390, .08, .12, .05, 'triangle');
+  updatePU(); return true;
+}
+const undecided = () => res && !res.verdict;
+function updatePU(){
+  $$('.pu').forEach(b => {
+    const k = b.dataset.pu, c = PU[k].cost;
+    let ok = !spinning && coins >= c;
+    if (k === 'nudge') ok = ok && undecided();
+    if (k === 'hint') ok = ok && REELS.some(r => held[r]);
+    if (k === 'lucky') ok = ok && !luckyArmed;
+    b.disabled = !ok && !(k === 'nudge' && nudging);
+    b.classList.toggle('armed', (k === 'lucky' && luckyArmed) || (k === 'nudge' && nudging));
+    b.title = k === 'nudge' && !undecided() ? 'Spin first, then nudge before you decide'
+            : k === 'hint' && !REELS.some(r => held[r]) ? 'Hold a part first' : '';
+  });
+}
+function toast(msg){
+  const t = $('#toast'); t.innerHTML = msg; t.classList.add('show');
+  clearTimeout(toast.tm); toast.tm = setTimeout(() => t.classList.remove('show'), 3600);
+}
+function reelList(r){ return r === 'base' ? pools.base : (SET.blanks ? [BLANK[r]] : []).concat(pools[r]); }
+
+function setNudging(on){ nudging = on; $('#reels').classList.toggle('nudging', on); updatePU(); }
+function doNudge(r, dir){
+  if (!nudging || held[r] || !spend('nudge')) return;
+  const list = reelList(r);
+  let i = list.findIndex(x => x.id === current[r].id); if (i < 0) i = 0;
+  const next = list[(i + dir + list.length) % list.length];
+  const H = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--H')) || 96;
+  const strip = $('#strip-' + r);
+  strip.style.transition = 'none';
+  strip.innerHTML = dir > 0 ? `<div class="item">${tileHTML(current[r])}</div><div class="item">${tileHTML(next)}</div>`
+                            : `<div class="item">${tileHTML(next)}</div><div class="item">${tileHTML(current[r])}</div>`;
+  strip.style.transform = `translateY(${dir > 0 ? 0 : -H}px)`; strip.offsetHeight;
+  strip.style.transition = 'transform .3s cubic-bezier(.3,1.4,.6,1)';
+  strip.style.transform = `translateY(${dir > 0 ? -H : 0}px)`;
+  tick(300, .08);
+  setTimeout(() => { strip.style.transition = 'none'; strip.style.transform = 'translateY(0)'; strip.innerHTML = `<div class="item">${tileHTML(next)}</div>`; }, 320);
+  current = Object.assign({}, current, { [r]: next });
+  setNudging(false);
+  showResult();
+}
+
+let pickReel = 'base';
+function renderPick(){
+  $$('#pickTabs .tab').forEach(t => t.setAttribute('aria-selected', t.dataset.reel === pickReel));
+  const groups = GROUPS.filter(g => g[1] === pickReel && SET.groups[g[0]]);
+  $('#pickList').innerHTML = groups.map(g => `<div class="pickgroup">${esc(g[2])}</div><div class="pickgrid">${
+    ALL.filter(x => x.group === g[0]).map(x => {
+      const label = x.reel === 'prefix' ? x.t + '-' : x.reel === 'suffix' ? '-' + x.t : x.t;
+      return `<button class="${x.reel !== 'base' ? 'affix' : ''}" data-pid="${esc(x.id)}">${esc(label)}<small>${esc(x.m)}</small></button>`;
+    }).join('')}</div>`).join('') || '<p class="empty">This reel has no parts turned on.</p>';
+}
+$('#pickTabs').addEventListener('click', e => { const t = e.target.closest('[data-reel]'); if (t){ pickReel = t.dataset.reel; renderPick(); } });
+$('#pickList').addEventListener('click', e => {
+  const b = e.target.closest('[data-pid]'); if (!b) return;
+  if (!spend('pick')) return;
+  const part = ALL.find(x => x.id === b.dataset.pid), r = part.reel;
+  current = Object.assign({}, current, { [r]: part });
+  $('#strip-' + r).innerHTML = `<div class="item">${tileHTML(part)}</div>`;
+  const others = REELS.filter(x => x !== r && held[x]).length;
+  if (others < 2){ held[r] = true; $('#hold-' + r).setAttribute('aria-pressed', true); $('#rw-' + r).classList.add('held'); $('#hold-' + r).disabled = false; }
+  $('#pickDlg').close();
+  if (REELS.every(x => current[x]) && undecided()) showResult();
+  toast(`<b>${esc(part.t)}</b> is locked in. Spin for the other parts!`);
+  updatePU();
+});
+
+function doHint(){
+  const h = REELS.filter(r => held[r]);
+  if (!h.length){ toast('Hold a part first. The hint tells you how many real words it can make.'); return; }
+  if (!spend('hint')) return;
+  const n = realCombos.filter(c => h.every(r => c[REELS.indexOf(r)].id === current[r].id)).length;
+  const names = h.map(r => `<b>${esc(current[r].blank ? 'no ' + r : current[r].t)}</b>`).join(' + ');
+  toast(n ? `With ${names} held, <b>${n}</b> real word${n === 1 ? '' : 's'} can come up.` : `With ${names} held, no real words can come up. Time to let go!`);
+}
+
+$('#powerups').addEventListener('click', e => {
+  const b = e.target.closest('[data-pu]'); if (!b || b.disabled) return;
+  const k = b.dataset.pu;
+  if (k === 'nudge'){ setNudging(!nudging); if (nudging) toast('Tap ▲ or ▼ on a reel to move it one tile.'); }
+  if (k === 'pick'){ pickReel = REELS.find(r => !held[r]) || 'base'; renderPick(); $('#pickDlg').showModal(); }
+  if (k === 'hint') doHint();
+  if (k === 'lucky' && spend('lucky')){ luckyArmed = true; updatePU(); toast('🍀 Your next spin will land on a real word, if one fits what you held.'); }
+});
+
+/* ---------- session goal ---------- */
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+let session = ls.get('session', { day: todayKey(), earned: 0, reached: false });
+if (session.day !== todayKey()) session = { day: todayKey(), earned: 0, reached: false };
+function addSession(n){
+  session.earned += n; ls.set('session', session);
+  if (SET.goal > 0 && !session.reached && session.earned >= SET.goal){
+    session.reached = true; ls.set('session', session);
+    setTimeout(() => {
+      $('#goalDlgReward').innerHTML = `You earned ${SET.goal} coins today!<br>🏆 ${esc(SET.reward || 'Nice work!')}`;
+      $('#goalDlg').showModal(); celebrate(); chime(); setTimeout(chime, 450);
+    }, 900);
+  }
+  renderGoal();
+}
+function renderGoal(){
+  const g = SET.goal || 0, bar = $('#goalbar');
+  bar.hidden = !g;
+  if (!g) return;
+  const pct = Math.min(100, session.earned / g * 100);
+  $('#goalFill').style.width = pct + '%';
+  $('#goalNum').textContent = `${Math.min(session.earned, g)} / ${g}`;
+  $('#goalReward').textContent = (session.reached ? '✅ ' : '🏆 ') + (SET.reward || '');
+  bar.classList.toggle('done', session.reached);
+}
+
 /* ---------- worksheet ---------- */
 const KIND_LABEL = { real: 'Real', could: 'Could be', no: 'No way' };
 const FIELDS = { meaning: 'What it means', sentence: 'Sentence', why: "Why it doesn't work", fix: 'Fixed word' };
@@ -739,7 +943,7 @@ $('#wsPrint').addEventListener('click', () => {
 /* ---------- notebook ---------- */
 let nbTab = 'inv';
 function renderNotebook(){
-  $$('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === nbTab));
+  $$('#nbDlg .tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === nbTab));
   const list = notebook[nbTab];
   if (!list.length){
     $('#nbList').innerHTML = `<li style="border:0;color:var(--muted)">${nbTab === 'inv' ? 'No invented words yet. When you call a word "Could be a word" and define it, it lands here.' : 'No real words yet. Keep spinning!'}</li>`;
@@ -752,7 +956,7 @@ $('#nbList').addEventListener('click', e => {
   const b = e.target.closest('[data-del]'); if (!b) return;
   notebook[nbTab].splice(+b.dataset.del, 1); ls.set('notebook', notebook); renderNotebook();
 });
-$$('.tab').forEach(t => t.addEventListener('click', () => { nbTab = t.dataset.tab; renderNotebook(); }));
+$$('#nbDlg .tab').forEach(t => t.addEventListener('click', () => { nbTab = t.dataset.tab; renderNotebook(); }));
 
 /* ---------- teacher settings ---------- */
 function examples(gid){ return PARTS[gid].map(x => x[0]).join(', '); }
@@ -768,6 +972,13 @@ function renderSettings(){
     <fieldset><legend>How often a real word comes up</legend>
       <div class="seg3">${segBtns('luck', [[0, 'Wild (pure chance)'], [0.3, 'Balanced'], [0.55, 'Lucky']])}</div>
       <p class="hint" id="comboCount"></p></fieldset>
+    <fieldset><legend>Today's goal</legend>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <label style="font-size:16px">Coins to earn <input type="number" id="optGoal" min="0" step="10" value="${SET.goal || 0}" style="font:inherit;font-size:16px;width:90px;padding:6px 8px;border-radius:10px;border:2px solid var(--edge)"></label>
+        <label style="font-size:16px;flex:1 1 260px">Reward <input id="optReward" value="${esc(SET.reward || '')}" maxlength="80" style="font:inherit;font-size:16px;width:100%;padding:6px 8px;border-radius:10px;border:2px solid var(--edge)"></label>
+      </div>
+      <p class="hint">Only coins earned count, not coins spent. Set 0 to hide the goal. Progress so far today: ${session.earned} coins.</p>
+      <div class="seg3"><button id="rsSession">Start a new session</button></div></fieldset>
     <fieldset><legend>Read-aloud voice</legend>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <select id="optVoice" style="font:inherit;font-size:16px;padding:8px;border-radius:10px;border:2px solid var(--edge);max-width:100%;flex:1 1 260px">${voiceOptions()}</select>
@@ -794,9 +1005,11 @@ $('#setBody').addEventListener('change', e => {
   if (t.dataset.g) SET.groups[t.dataset.g] = t.checked;
   if (t.id === 'optBlank') SET.blanks = t.checked;
   if (t.id === 'optSound') SET.sound = t.checked;
+  if (t.id === 'optGoal'){ SET.goal = Math.max(0, Math.round(+t.value || 0)); session.reached = SET.goal > 0 && session.earned >= SET.goal; ls.set('session', session); }
+  if (t.id === 'optReward') SET.reward = t.value.trim();
   if (t.id === 'optVoice'){ SET.voice = t.value; say(res ? res.word : 'inspector'); }
   if (t.id === 'optRate'){ SET.rate = +t.value; say(res ? res.word : 'inspector'); }
-  saveSet(); buildPools(); updateCounts();
+  saveSet(); buildPools(); updateCounts(); renderGoal();
 });
 $('#setBody').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -805,6 +1018,8 @@ $('#setBody').addEventListener('click', e => {
     SET[b.dataset.k] = v; saveSet();
     $$(`#setBody [data-k="${b.dataset.k}"]`).forEach(x => x.setAttribute('aria-pressed', x === b));
   }
+  if (b.id === 'rsSession' && confirm('Start a new session? Goal progress goes back to 0 (coins stay).')){
+    session = { day: todayKey(), earned: 0, reached: false }; ls.set('session', session); renderGoal(); renderSettings(); }
   if (b.id === 'voiceTest') say(res ? res.word : 'inspector');
   if (b.id === 'rsCoins' && confirm('Reset coins to 0?')){ coins = 0; ls.set('coins', 0); $('#coinN').textContent = 0; }
   if (b.id === 'rsNb' && confirm('Clear the notebook (invented and real words)?')){ notebook = { inv: [], real: [] }; ls.set('notebook', notebook); }
@@ -831,8 +1046,11 @@ document.addEventListener('keydown', e => {
 });
 
 $('#coinN').textContent = coins;
+updateSheetCount();
 buildPools();
 renderReels();
+renderGoal();
+updatePU();
 })();
 </script>
 </body>
