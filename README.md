@@ -14,6 +14,8 @@ Live page: https://imjusterin2u.github.io/RandomWordGenerator/
 - Spelling rules are shown when they change the word: drop the e, doubling, Greek connecting o.
 - Chameleon prefixes: if con + lect is spun, the page points out that it becomes **collect**.
 - Coins: real word called right +10, could-be word defined +5, "no way" on a non-word +3.
+- After every verdict a **Write it down** card asks for the meaning and a sentence (or, for a no-way word, why and a fix). Coins reward writing: +3 for 3+ words, +5 for a 5+ word sentence that uses the word, +5 when a fix makes a real word.
+- **Worksheet** collects everything he writes, editable, with his name and date, and prints as a clean sheet.
 - Notebook keeps invented words with their definitions, and real words found.
 - Teacher can mark a word "real" when it isn't in the list; it's saved on that iPad.
 - Everything saves on the device (no account or database).

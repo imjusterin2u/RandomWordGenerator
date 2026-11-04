@@ -177,6 +177,41 @@ label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .hint{color:var(--muted);font-size:14px;margin:4px 0 0}
 .warn{color:var(--bad);font-weight:700;font-size:14px;min-height:18px;margin:4px 0 0}
 
+/* writing card */
+.write{margin-top:14px;background:#fff;border:2px dashed var(--celery);border-radius:14px;padding:12px 14px}
+.write h4{margin:0 0 8px;font-size:18px}
+.wq{display:block;margin:0 0 10px}
+.wq span{display:block;font-weight:700;font-size:16px;margin-bottom:4px}
+.wq em{font-style:normal;color:var(--gold-dark);font-size:14px;margin-left:4px}
+.wq textarea,.wq input{width:100%;font:inherit;font-size:19px;line-height:1.5;border-radius:10px;border:2px solid var(--edge);padding:10px 12px;background:
+  repeating-linear-gradient(transparent 0 calc(1.5em + 9px), #E3EAE0 calc(1.5em + 9px) calc(1.5em + 10px));resize:vertical}
+.wq textarea{min-height:96px}
+.wmsg{font-weight:700;color:var(--bad);font-size:15px;align-self:center}
+.cnt{background:var(--gold);color:#3D2B00;border-radius:999px;font-size:13px;padding:1px 7px;margin-left:2px}
+/* worksheet */
+.ws-head{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.ws-head input{font:inherit;font-size:18px;border:2px solid var(--edge);border-radius:10px;padding:8px 10px;min-width:200px}
+.ws-card{border:2px solid var(--edge);border-radius:14px;padding:12px 14px;margin-bottom:10px;position:relative}
+.ws-card .w{font-size:24px;font-weight:700}
+.ws-card .badge{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:2px 10px;margin-left:8px;vertical-align:middle;color:#fff}
+.badge.real{background:#0D8A3D}.badge.could{background:#2C6CB0}.badge.no{background:#A9433B}
+.ws-card .p{color:var(--muted);font-size:14px;margin:2px 0 8px}
+.ws-card label{display:block;font-weight:700;font-size:14px;color:var(--muted);margin-top:6px}
+.ws-card textarea{width:100%;font:inherit;font-size:17px;border:1px solid var(--edge);border-radius:8px;padding:8px;resize:vertical;min-height:52px}
+.ws-card .x{position:absolute;top:8px;right:10px;color:var(--muted);font-size:22px}
+#printSheet{display:none}
+@media print{
+  body{background:#fff}
+  body > *:not(#printSheet){display:none!important}
+  #printSheet{display:block;font-family:"Atkinson Hyperlegible",sans-serif;color:#000}
+  #printSheet h1{font-family:Bungee,sans-serif;font-size:26px;margin:0 0 4px}
+  #printSheet .meta{font-size:16px;margin-bottom:14px}
+  #printSheet .pc{border:2px solid #000;border-radius:12px;padding:10px 14px;margin-bottom:12px;break-inside:avoid}
+  #printSheet .pw{font-size:22px;font-weight:700}
+  #printSheet .pp{font-size:13px;color:#333;margin-bottom:6px}
+  #printSheet .pq{font-weight:700;font-size:13px;margin-top:6px}
+  #printSheet .pa{font-size:16px;min-height:22px;border-bottom:1px solid #999;padding-bottom:4px}
+}
 /* confetti */
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
 .confetti i{position:absolute;top:-20px;width:10px;height:16px;border-radius:2px;animation:fall linear forwards}
@@ -197,6 +232,9 @@ label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 <header class="top">
   <div class="brand">Word Slots<small>Spin it. Build it. Decide.</small></div>
   <div class="coins" id="coins" aria-live="polite"><div class="coin">W</div><span id="coinN">0</span></div>
+  <button class="tbtn" id="wsBtn" aria-label="Worksheet">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+    <span class="lbl">Worksheet</span><span class="cnt" id="wsCnt">0</span></button>
   <button class="tbtn" id="nbBtn" aria-label="Word notebook">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z"/><path d="M4 17a3 3 0 0 1 3-3h12"/></svg>
     <span class="lbl">Notebook</span></button>
@@ -255,6 +293,18 @@ label.ck .ex{display:block;color:var(--muted);font-size:13px;margin-top:2px}
     <ul class="nb" id="nbList"></ul>
   </div>
 </dialog>
+
+<!-- Worksheet -->
+<dialog id="wsDlg" aria-labelledby="wsTitle">
+  <div class="dhead"><h3 id="wsTitle">✍️ My Worksheet</h3><button class="pill small" id="wsPrint">Print</button><button class="pill ghost small" data-close>Close</button></div>
+  <div class="dbody">
+    <div class="ws-head"><label>Name <input id="wsName" autocomplete="off"></label><span id="wsDate"></span>
+      <button class="pill ghost small" id="wsClear" style="margin-left:auto">Start a new sheet</button></div>
+    <div id="wsList"></div>
+  </div>
+</dialog>
+
+<div id="printSheet"></div>
 
 <!-- Teacher settings -->
 <dialog id="setDlg" aria-labelledby="setTitle">
@@ -435,6 +485,7 @@ let custom = ls.get('customReal', []);
 custom.forEach(w => REAL.add(w));
 let coins = ls.get('coins', 0);
 let notebook = ls.get('notebook', { inv: [], real: [] });
+let sheet = ls.get('sheet', { name: '', items: [] });
 
 /* ---------- pools ---------- */
 const REELS = ['prefix', 'base', 'suffix'];
@@ -587,11 +638,12 @@ function decide(v){
   revealMeanings();
   $$('.vbtn').forEach(b => { b.disabled = true; if (b.dataset.v === v) b.classList.add('chosen'); });
   const fb = $('#feedback');
-  let cls = 'good', html = '', gain = 0;
+  let cls = 'good', html = '', gain = 0, kind = null;
   const w = `<b>${esc(res.word)}</b>`;
   if (res.isReal){
+    kind = 'real';
     if (v === 'real'){
-      gain = 10; html = `<span class="big">JACKPOT! +10</span>${w} is a real word. Now say what it means using its parts: ${partsSentence()}.`;
+      gain = 10; html = `<span class="big">JACKPOT! +10</span>${w} is a real word. The parts: ${partsSentence()}.`;
       celebrate();
     } else if (v === 'could'){
       gain = 5; cls = 'info'; html = `<span class="big">+5 · Surprise!</span>${w} is actually a real word. Your thinking was right: the parts fit. ${partsSentence()}.`;
@@ -602,40 +654,89 @@ function decide(v){
   } else if (v === 'real'){
     cls = 'meh';
     html = `<span class="big">Hmm…</span>${w} isn't in our word list. Talk it over: is it really a word, or does it just sound like one?${chamNote()}
-      <div class="row"><button class="pill small" id="tReal">Teacher: it's real (+10)</button><button class="pill ghost small" id="tCould">Call it a could-be word</button></div>`;
+      <div class="row"><button class="pill small" id="tReal">Teacher: it's real (+10)</button><button class="pill ghost small" id="tCould">Call it a could-be word</button><button class="pill ghost small" id="tNo">Call it a no-way word</button></div>`;
   } else if (v === 'could'){
-    gain = 0; cls = 'info';
-    html = `<span class="big">Inventor's Prize</span>If ${w} were a word, what would it mean? Use the parts: ${partsSentence()}.${chamNote()}
-      <textarea id="defIn" placeholder="${esc(res.word)} means…" aria-label="Your definition"></textarea>
-      <div class="row"><button class="pill" id="saveDef">Save to notebook (+5)</button><button class="pill ghost small" id="skipDef">Skip (+2)</button></div>`;
+    kind = 'could'; cls = 'info';
+    html = `<span class="big">Inventor's Prize</span>If ${w} were a word, what would it mean? The parts: ${partsSentence()}.${chamNote()}`;
   } else {
-    gain = 3; cls = 'good';
-    html = `<span class="big">Good eye! +3</span>Why doesn't ${w} work? Do the parts clash, does the spelling look wrong, or does the meaning not make sense?${chamNote()}`;
+    kind = 'no'; gain = 3;
+    html = `<span class="big">Good eye! +3</span>${w} doesn't work. The parts: ${partsSentence()}.${chamNote()}`;
   }
-  fb.className = 'feedback show ' + cls; fb.innerHTML = html;
+  fb.className = 'feedback show ' + cls;
+  fb.innerHTML = html + (kind ? writeCard(kind) : '');
   if (gain) addCoins(gain);
   if (v === 'real' && res.isReal) chime(); else if (gain) tick(880, .06);
+  if (kind) wireWrite(kind);
 
   const on = (id, f) => { const el = document.getElementById(id); if (el) el.addEventListener('click', f); };
   on('tReal', () => { custom.push(res.word); ls.set('customReal', custom); REAL.add(res.word); res.isReal = true; logReal(); buildPools();
-    addCoins(10); chime(); celebrate(); fb.className = 'feedback show good'; fb.innerHTML = `<span class="big">JACKPOT! +10</span><b>${esc(res.word)}</b> is now in the real-word list on this iPad. What does it mean? ${partsSentence()}.`; });
+    addCoins(10); chime(); celebrate(); fb.className = 'feedback show good';
+    fb.innerHTML = `<span class="big">JACKPOT! +10</span><b>${esc(res.word)}</b> is now in the real-word list on this iPad. The parts: ${partsSentence()}.` + writeCard('real');
+    wireWrite('real'); });
   on('tCould', () => { res.verdict = null; decide('could'); });
-  on('saveDef', () => {
-    const d = $('#defIn').value.trim();
-    if (!d){ $('#defIn').focus(); $('#defIn').placeholder = 'Type what it would mean first'; return; }
-    notebook.inv.unshift({ w: res.word, parts: partsPlain(), d, at: Date.now() }); ls.set('notebook', notebook);
-    addCoins(5); chime();
-    fb.innerHTML = `<span class="big">Saved! +5</span><b>${esc(res.word)}</b>: ${esc(d)}`;
-  });
-  on('skipDef', () => { addCoins(2); fb.innerHTML = `<span class="big">+2</span>Spin again when you're ready.`; });
-  if (v === 'could' && !res.isReal) setTimeout(() => $('#defIn') && $('#defIn').focus({ preventScroll: true }), 50);
+  on('tNo', () => { res.verdict = null; decide('no'); });
 }
+
+/* ---------- writing ---------- */
+const PROMPTS = {
+  real:  [['meaning', 'What does it mean? Use the parts.', 'It means…', 3],
+          ['sentence', 'Use it in a sentence.', 'Write a sentence with the word…', 5]],
+  could: [['meaning', 'What would it mean? Use the parts.', 'It would mean…', 3],
+          ['sentence', 'Use your new word in a sentence.', 'Write a sentence with the word…', 5]],
+  no:    [['why', "Why doesn't it work?", 'It doesn’t work because…', 3],
+          ['fix', 'Fix it: change one part to make a real word.', 'New word', 5]],
+};
+const wordCount = t => (t.trim().match(/[A-Za-z’']+/g) || []).length;
+function writeCard(kind){
+  const rows = PROMPTS[kind].map(([key, q, ph, pts]) => key === 'fix'
+    ? `<label class="wq"><span>${q} <em>+${pts} if it's real</em></span><input id="w-${key}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ph}"></label>`
+    : `<label class="wq"><span>${q} <em>+${pts}</em></span><textarea id="w-${key}" rows="2" placeholder="${esc(ph)}"></textarea></label>`).join('');
+  return `<div class="write"><h4>✍️ Write it down</h4>${rows}
+    <div class="row"><button class="pill" id="wSave">Add to worksheet</button><span class="wmsg" id="wMsg" role="status"></span></div></div>`;
+}
+function wireWrite(kind){
+  const first = document.getElementById('w-' + PROMPTS[kind][0][0]);
+  setTimeout(() => first && first.focus({ preventScroll: true }), 60);
+  $('#wSave').addEventListener('click', () => saveWriting(kind));
+}
+function usesWord(sentence, word){
+  const t = sentence.toLowerCase(), w = word.toLowerCase();
+  return t.includes(w) || (w.length > 5 && t.includes(w.slice(0, -2)));
+}
+function saveWriting(kind){
+  const msg = $('#wMsg');
+  const val = k => { const el = document.getElementById('w-' + k); return el ? el.value.trim() : ''; };
+  const [k1, , , p1] = PROMPTS[kind][0], [k2, , , p2] = PROMPTS[kind][1];
+  const a = val(k1), b = val(k2);
+  if (wordCount(a) < 3){ msg.textContent = 'Write at least 3 words for the first answer.'; document.getElementById('w-' + k1).focus(); return; }
+  let pts = p1, notes = [];
+  if (kind === 'no'){
+    if (b){
+      const fixed = b.toLowerCase().replace(/[^a-z]/g, '');
+      if (REAL.has(fixed)){ pts += p2; notes.push(`<b>${esc(fixed)}</b> is a real word!`); }
+      else notes.push(`<b>${esc(fixed)}</b> isn't in our list. Talk it over.`);
+    }
+  } else if (b){
+    if (wordCount(b) < 5){ msg.textContent = 'Make your sentence at least 5 words.'; document.getElementById('w-' + k2).focus(); return; }
+    if (!usesWord(b, res.word)){ msg.innerHTML = `Use the word <b>${esc(res.word)}</b> in your sentence.`; document.getElementById('w-' + k2).focus(); return; }
+    pts += p2;
+  }
+  const entry = { w: res.word, parts: partsSentence().replace(/<[^>]+>/g, ''), kind, at: Date.now() };
+  entry[k1] = a; if (b) entry[k2] = b;
+  sheet.items.push(entry); ls.set('sheet', sheet); updateSheetCount();
+  if (kind === 'could'){ notebook.inv.unshift({ w: res.word, parts: partsPlain(), d: a, at: Date.now() }); ls.set('notebook', notebook); }
+  addCoins(pts); chime();
+  const card = $('#wSave').closest('.write');
+  card.innerHTML = `<h4>✍️ Added to your worksheet! +${pts}</h4><div>${notes.join(' ')} ${b ? '' : 'Tip: add the second answer next time for more coins.'}</div>`;
+}
+
 function partsPlain(){ return [res.p, res.b, res.s].filter(x => x && !x.blank).map(x => x.t).join(' + '); }
 function logReal(){
   if (!notebook.real.some(x => x.w === res.word)){ notebook.real.unshift({ w: res.word, parts: partsPlain(), at: Date.now() }); ls.set('notebook', notebook); }
 }
 function addCoins(n){
   coins += n; ls.set('coins', coins); $('#coinN').textContent = coins;
+updateSheetCount();
   const c = $('#coins'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump');
 }
 
@@ -671,6 +772,47 @@ function pullLever(){
   const l = $('#lever'); l.classList.add('pulled'); tone(140, 0, .12, .06, 'sawtooth');
   setTimeout(() => { l.classList.remove('pulled'); spin(); }, 220);
 }
+
+/* ---------- worksheet ---------- */
+const KIND_LABEL = { real: 'Real', could: 'Could be', no: 'No way' };
+const FIELDS = { meaning: 'What it means', sentence: 'Sentence', why: "Why it doesn't work", fix: 'Fixed word' };
+const FIELD_ORDER = { real: ['meaning', 'sentence'], could: ['meaning', 'sentence'], no: ['why', 'fix'] };
+function updateSheetCount(){ $('#wsCnt').textContent = sheet.items.length; }
+const today = () => new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+function renderSheet(){
+  $('#wsName').value = sheet.name || '';
+  $('#wsDate').textContent = today();
+  if (!sheet.items.length){ $('#wsList').innerHTML = '<p class="empty">Nothing yet. After each spin, write about the word and tap <b>Add to worksheet</b>.</p>'; return; }
+  $('#wsList').innerHTML = sheet.items.map((it, i) => `<div class="ws-card">
+    <div class="w">${i + 1}. ${esc(it.w)}<span class="badge ${it.kind}">${KIND_LABEL[it.kind]}</span></div>
+    <div class="p">${esc(it.parts)}</div>
+    ${FIELD_ORDER[it.kind].map(f => `<label>${FIELDS[f]}<textarea data-i="${i}" data-f="${f}">${esc(it[f] || '')}</textarea></label>`).join('')}
+    <button class="x" data-wdel="${i}" aria-label="Remove ${esc(it.w)}">×</button></div>`).join('');
+}
+$('#wsList').addEventListener('input', e => {
+  const t = e.target; if (!t.dataset.f) return;
+  sheet.items[+t.dataset.i][t.dataset.f] = t.value; ls.set('sheet', sheet);
+});
+$('#wsList').addEventListener('click', e => {
+  const b = e.target.closest('[data-wdel]'); if (!b) return;
+  if (!confirm('Remove this word from the worksheet?')) return;
+  sheet.items.splice(+b.dataset.wdel, 1); ls.set('sheet', sheet); updateSheetCount(); renderSheet();
+});
+$('#wsName').addEventListener('input', e => { sheet.name = e.target.value; ls.set('sheet', sheet); });
+$('#wsClear').addEventListener('click', () => {
+  if (!sheet.items.length || confirm('Start a new worksheet? Print this one first if you want to keep it.')){
+    sheet.items = []; ls.set('sheet', sheet); updateSheetCount(); renderSheet();
+  }
+});
+$('#wsPrint').addEventListener('click', () => {
+  $('#printSheet').innerHTML = `<h1>Word Slots: Spin &amp; Write</h1>
+    <div class="meta"><b>Name:</b> ${esc(sheet.name || '________________')} &nbsp;&nbsp; <b>Date:</b> ${esc(today())} &nbsp;&nbsp; <b>Words:</b> ${sheet.items.length}</div>` +
+    sheet.items.map((it, i) => `<div class="pc"><div class="pw">${i + 1}. ${esc(it.w)} <span style="font-size:14px;font-weight:400">(${KIND_LABEL[it.kind]})</span></div>
+      <div class="pp">${esc(it.parts)}</div>
+      ${FIELD_ORDER[it.kind].map(f => `<div class="pq">${FIELDS[f]}</div><div class="pa">${esc(it[f] || '')}</div>`).join('')}</div>`).join('');
+  $('#wsDlg').close();
+  setTimeout(() => window.print(), 50);
+});
 
 /* ---------- notebook ---------- */
 let nbTab = 'inv';
@@ -746,6 +888,7 @@ $('#lever').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key ==
 $('#hearBtn').addEventListener('click', () => res && say(res.word));
 $('#peekBtn').addEventListener('click', revealMeanings);
 $$('.vbtn').forEach(b => b.addEventListener('click', () => decide(b.dataset.v)));
+$('#wsBtn').addEventListener('click', () => { renderSheet(); $('#wsDlg').showModal(); });
 $('#nbBtn').addEventListener('click', () => { renderNotebook(); $('#nbDlg').showModal(); });
 $('#setBtn').addEventListener('click', openSettings);
 $$('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
