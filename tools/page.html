@@ -338,6 +338,8 @@ const DEFAULT_SET = {
   luck: 0.3,          // share of spins steered toward a real word
   meanings: 'always', // 'always' | 'after'
   sound: true,
+  voice: '',         // speechSynthesis voice name; '' = pick a good default
+  rate: 0.85,
 };
 let SET = Object.assign({}, DEFAULT_SET, ls.get('settings', {}));
 SET.groups = Object.assign({}, DEFAULT_SET.groups, SET.groups || {});
@@ -625,9 +627,36 @@ function celebrate(){
     `<i style="left:${Math.random() * 100}%;background:${pick(colors)};animation-duration:${1.6 + Math.random() * 1.6}s;animation-delay:${Math.random() * .4}s"></i>`).join('');
   setTimeout(() => box.innerHTML = '', 3800);
 }
-function say(text){
-  try { const u = new SpeechSynthesisUtterance(text); u.rate = .85; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {}
+function allVoices(){
+  try { return speechSynthesis.getVoices(); } catch { return []; }
 }
+function englishVoices(){
+  const v = allVoices();
+  const en = v.filter(x => /^en/i.test(x.lang));
+  return (en.length ? en : v).slice().sort((a, b) =>
+    (b.localService - a.localService) || (a.lang === 'en-US' ? -1 : b.lang === 'en-US' ? 1 : 0) || a.name.localeCompare(b.name));
+}
+function chosenVoice(){
+  const v = englishVoices();
+  return v.find(x => x.name === SET.voice)
+      || v.find(x => /^Samantha/.test(x.name))
+      || v.find(x => x.lang === 'en-US' && x.localService) || v[0] || null;
+}
+function say(text){
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    const v = chosenVoice(); if (v){ u.voice = v; u.lang = v.lang; }
+    u.rate = SET.rate || .85;
+    try { speechSynthesis.cancel(); } catch {}
+    speechSynthesis.speak(u);
+  } catch (e) { console.warn('speech', e); }
+}
+function voiceOptions(){
+  const v = englishVoices(), cur = chosenVoice();
+  if (!v.length) return '<option value="">No voices found on this device</option>';
+  return v.map(x => `<option value="${esc(x.name)}" ${cur && x.name === cur.name ? 'selected' : ''}>${esc(x.name)} (${esc(x.lang)})${x.localService ? '' : ' · online'}</option>`).join('');
+}
+try { speechSynthesis.addEventListener('voiceschanged', () => { const sel = document.getElementById('optVoice'); if (sel) sel.innerHTML = voiceOptions(); }); } catch {}
 
 /* ---------- lever ---------- */
 function pullLever(){
@@ -709,6 +738,13 @@ function renderSettings(){
     <fieldset><legend>How often a real word comes up</legend>
       <div class="seg3">${segBtns('luck', [[0, 'Wild (pure chance)'], [0.3, 'Balanced'], [0.55, 'Lucky']])}</div>
       <p class="hint" id="comboCount"></p></fieldset>
+    <fieldset><legend>Read-aloud voice</legend>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="optVoice" style="font:inherit;font-size:16px;padding:8px;border-radius:10px;border:2px solid var(--edge);max-width:100%;flex:1 1 260px">${voiceOptions()}</select>
+        <button class="pill small" id="voiceTest" type="button">Test</button></div>
+      <label class="ck" style="align-items:center"><span style="min-width:60px">Speed</span>
+        <input type="range" id="optRate" min="0.5" max="1.2" step="0.05" value="${SET.rate || .85}" style="width:auto;flex:1;height:auto"></label>
+      <p class="hint">These are the voices on this device. Each iPad or computer keeps its own choice.</p></fieldset>
     <fieldset><legend>Options</legend>
       <label class="ck"><input type="checkbox" id="optBlank" ${SET.blanks ? 'checked' : ''}><span>Reels can land on "no prefix" or "no suffix"<span class="ex">Gives two-part words like inspect or helpful</span></span></label>
       <label class="ck"><input type="checkbox" id="optSound" ${SET.sound ? 'checked' : ''}><span>Sound effects</span></label>
@@ -728,6 +764,8 @@ $('#setBody').addEventListener('change', e => {
   if (t.dataset.g) SET.groups[t.dataset.g] = t.checked;
   if (t.id === 'optBlank') SET.blanks = t.checked;
   if (t.id === 'optSound') SET.sound = t.checked;
+  if (t.id === 'optVoice'){ SET.voice = t.value; say(res ? res.word : 'inspector'); }
+  if (t.id === 'optRate'){ SET.rate = +t.value; say(res ? res.word : 'inspector'); }
   saveSet(); buildPools(); updateCounts();
 });
 $('#setBody').addEventListener('click', e => {
@@ -737,6 +775,7 @@ $('#setBody').addEventListener('click', e => {
     SET[b.dataset.k] = v; saveSet();
     $$(`#setBody [data-k="${b.dataset.k}"]`).forEach(x => x.setAttribute('aria-pressed', x === b));
   }
+  if (b.id === 'voiceTest') say(res ? res.word : 'inspector');
   if (b.id === 'rsCoins' && confirm('Reset coins to 0?')){ coins = 0; ls.set('coins', 0); $('#coinN').textContent = 0; }
   if (b.id === 'rsNb' && confirm('Clear the notebook (invented and real words)?')){ notebook = { inv: [], real: [] }; ls.set('notebook', notebook); }
   if (b.id === 'rsCustom' && confirm('Remove the words you marked as real?')){ custom.forEach(w => { if (!REAL_LIST.includes(w)) REAL.delete(w); }); custom = []; ls.set('customReal', custom); buildPools(); renderSettings(); }
