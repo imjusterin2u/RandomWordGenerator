@@ -428,7 +428,7 @@ function spin(){
   $('#spinBtn').disabled = true;
   REELS.forEach(r => $('#hold-' + r).disabled = true);
   $('#cabinet').classList.remove('win');
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  try { if (window.speechSynthesis && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel(); } catch {}
   const out = chooseOutcome();
   const H = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--H')) || 96;
   let done = 0;
@@ -606,11 +606,38 @@ updateSheetCount();
 }
 
 /* ---------- sound ---------- */
-let actx;
+/* iPad/iPhone audio:
+   - Safari only lets a page start sound from a tap (touchend/click) or key, so we "unlock" on the first one.
+   - The Silent / ring setting mutes web sound unless the page asks for media playback, so we ask for it. */
+let actx, unlocked = false;
+function getCtx(){
+  if (!actx){ const C = window.AudioContext || window.webkitAudioContext; if (C) actx = new C(); }
+  return actx;
+}
+function unlockAudio(){
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
+  const c = getCtx();
+  if (c){
+    if (c.state !== 'running') c.resume().catch(() => {});
+    if (!unlocked){
+      try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch {}
+    }
+  }
+  if (!unlocked){
+    unlocked = true;
+    // older iPadOS: playing a silent media element switches the page to "playback" so the Silent setting doesn't mute it
+    try {
+      const a = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+      a.setAttribute('playsinline', ''); a.volume = 0.01; a.play().catch(() => {});
+    } catch {}
+  }
+}
+['touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
 function tone(f, t, d, v, type){
   if (!SET.sound) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    getCtx(); if (!actx) return;
+    if (actx.state !== 'running') actx.resume().catch(() => {});
     const o = actx.createOscillator(), g = actx.createGain();
     o.type = type || 'square'; o.frequency.value = f;
     g.gain.setValueAtTime(v, actx.currentTime + t); g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + t + d);
@@ -647,7 +674,9 @@ function say(text){
     const u = new SpeechSynthesisUtterance(text);
     const v = chosenVoice(); if (v){ u.voice = v; u.lang = v.lang; }
     u.rate = SET.rate || .85;
-    try { speechSynthesis.cancel(); } catch {}
+    // iPad Safari can go quiet if cancel() runs right before speak(), so only cancel when something is playing
+    try { if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel(); } catch {}
+    try { speechSynthesis.resume(); } catch {}
     speechSynthesis.speak(u);
   } catch (e) { console.warn('speech', e); }
 }
@@ -785,7 +814,7 @@ $('#setDlg').addEventListener('close', () => { if (res && !res.verdict) showResu
 
 /* ---------- wire up ---------- */
 $('#spinBtn').addEventListener('click', pullLever);
-$('#lever').addEventListener('pointerdown', e => { e.preventDefault(); pullLever(); });
+$('#lever').addEventListener('click', () => pullLever());
 $('#lever').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pullLever(); } });
 $('#hearBtn').addEventListener('click', () => res && say(res.word));
 $('#peekBtn').addEventListener('click', revealMeanings);
